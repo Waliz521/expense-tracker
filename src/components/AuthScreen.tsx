@@ -34,7 +34,7 @@ export function AuthScreen() {
           </div>
         </div>
         <h1 className="text-center font-display text-xl font-bold text-surface-900 dark:text-white">
-          Expense Tracker
+          Expense Tracking
         </h1>
         <p className="mt-1 text-center text-sm text-surface-500 dark:text-surface-400">
           {isSignUp ? 'Create an account' : 'Sign in to continue'}
