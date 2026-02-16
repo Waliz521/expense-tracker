@@ -37,7 +37,7 @@ interface DashboardChartsProps {
   formatCurrency: (n: number) => string;
 }
 
-export function DashboardCharts({ byCategory, daily, total, formatCurrency }: DashboardChartsProps) {
+export function DashboardCharts({ byCategory, daily, total: _total, formatCurrency }: DashboardChartsProps) {
   const pieData = byCategory.map((c) => ({
     name: getCategoryById(c.categoryId).label,
     value: c.total,

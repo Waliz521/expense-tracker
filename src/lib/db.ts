@@ -1,3 +1,4 @@
+import type { ExpenseEntry } from './db.types';
 import { isSupabaseConfigured } from './supabase';
 import {
   addExpenseSupabase,
