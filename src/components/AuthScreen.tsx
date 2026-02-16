@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Loader2, Wallet } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export function AuthScreen() {
   const { signIn, signUp } = useAuth();
+  const { resolved } = useTheme();
+  const isDark = resolved === 'dark';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -26,22 +29,22 @@ export function AuthScreen() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-100 px-4 dark:bg-surface-900">
-      <div className="w-full max-w-sm rounded-2xl border border-surface-200 bg-white p-6 shadow-xl dark:border-surface-800 dark:bg-surface-900 sm:p-8">
+    <div className={`flex min-h-screen items-center justify-center px-4 ${isDark ? 'bg-surface-900' : 'bg-surface-100'}`}>
+      <div className={`w-full max-w-sm rounded-2xl border p-6 shadow-xl sm:p-8 ${isDark ? 'border-gray-700 bg-gray-800' : 'border-surface-200 bg-white'}`}>
         <div className="mb-6 flex justify-center">
           <div className="rounded-xl bg-accent p-3 text-white shadow-lg shadow-accent/20">
             <Wallet className="h-8 w-8" />
           </div>
         </div>
-        <h1 className="text-center font-display text-xl font-bold text-surface-900 dark:text-white">
+        <h1 className={`text-center font-display text-xl font-bold ${isDark ? 'text-white' : 'text-surface-900'}`}>
           Expense Tracking
         </h1>
-        <p className="mt-1 text-center text-sm text-surface-500 dark:text-surface-400">
+        <p className={`mt-1 text-center text-sm ${isDark ? 'text-gray-300' : 'text-surface-500'}`}>
           {isSignUp ? 'Create an account' : 'Sign in to continue'}
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-surface-700 dark:text-surface-300">
+            <label className={`mb-1 block text-sm font-medium ${isDark ? 'text-gray-200' : 'text-surface-700'}`}>
               Email
             </label>
             <input
@@ -50,11 +53,11 @@ export function AuthScreen() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="w-full rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-surface-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-surface-800 dark:bg-surface-800 dark:text-white"
+              className={`w-full rounded-lg border px-3 py-2 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-gray-600 bg-gray-900 text-white placeholder:text-gray-500' : 'border-surface-200 bg-surface-50 text-surface-900 placeholder:text-surface-400'}`}
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-surface-700 dark:text-surface-300">
+            <label className={`mb-1 block text-sm font-medium ${isDark ? 'text-gray-200' : 'text-surface-700'}`}>
               Password
             </label>
             <input
@@ -64,7 +67,7 @@ export function AuthScreen() {
               required
               minLength={6}
               autoComplete={isSignUp ? 'new-password' : 'current-password'}
-              className="w-full rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-surface-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-surface-800 dark:bg-surface-800 dark:text-white"
+              className={`w-full rounded-lg border px-3 py-2 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-gray-600 bg-gray-900 text-white placeholder:text-gray-500' : 'border-surface-200 bg-surface-50 text-surface-900 placeholder:text-surface-400'}`}
             />
           </div>
           {message && (
@@ -90,7 +93,7 @@ export function AuthScreen() {
         <button
           type="button"
           onClick={() => setIsSignUp((v) => !v)}
-          className="mt-4 w-full text-center text-sm text-surface-500 underline hover:text-surface-700 dark:hover:text-surface-400"
+          className={`mt-4 w-full text-center text-sm underline ${isDark ? 'text-gray-300 hover:text-gray-100' : 'text-surface-500 hover:text-surface-700'}`}
         >
           {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
         </button>
