@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface-200: #e7e5e4;
+  --surface-800: #292524;
+}
+
+.dark {
+  --surface-200: #292524;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Recharts tooltip/legend in dark mode */
+.dark .recharts-default-legend {
+  font-size: 12px;
+}
+
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #1c1917 !important;
+  border: 1px solid #292524 !important;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
