@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { ExpenseEntry } from '../lib/db';
 import type { CategorySummary, DailyTotal } from '../types/expense';
-import { CATEGORY_IDS, isSavingsCategory } from '../lib/categories';
+import { CATEGORY_IDS, isSavingsCategory, type CategoryId } from '../lib/categories';
 
 export function useMonthSummary(expenses: ExpenseEntry[]) {
   return useMemo(() => {
@@ -31,7 +31,7 @@ export function useMonthSummary(expenses: ExpenseEntry[]) {
 
     const byCategory: CategorySummary[] = Array.from(byCategoryMap.entries())
       .map(([categoryId, { total: catTotal, count }]) => ({
-        categoryId,
+        categoryId: categoryId as CategoryId,
         total: catTotal,
         count,
         percentage: total > 0 ? (catTotal / total) * 100 : 0,
