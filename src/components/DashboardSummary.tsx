@@ -1,29 +1,43 @@
-import { TrendingUp, Calendar, Layers } from 'lucide-react';
+import { TrendingUp, Calendar, Layers, PiggyBank } from 'lucide-react';
 import type { CategorySummary } from '../types/expense';
 import { getCategoryById } from '../lib/categories';
 import { CategoryIcon } from './icons';
 
 interface DashboardSummaryProps {
   total: number;
+  savings: number;
   byCategory: CategorySummary[];
   monthLabel: string;
   formatCurrency: (n: number) => string;
 }
 
-export function DashboardSummary({ total, byCategory, monthLabel, formatCurrency }: DashboardSummaryProps) {
+export function DashboardSummary({ total, savings, byCategory, monthLabel, formatCurrency }: DashboardSummaryProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-surface-800 dark:bg-surface-900">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-accent/10 p-3 dark:bg-accent/20">
             <TrendingUp className="h-6 w-6 text-accent" />
           </div>
           <div>
-            <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Total this month</p>
+            <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Total expenses</p>
             <p className="font-display text-2xl font-bold text-surface-900 dark:text-white">{formatCurrency(total)}</p>
           </div>
         </div>
       </div>
+      {savings > 0 && (
+        <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-surface-800 dark:bg-surface-900">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-green-500/10 p-3 dark:bg-green-500/20">
+              <PiggyBank className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Savings</p>
+              <p className="font-display text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(savings)}</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-surface-800 dark:bg-surface-900">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-accent/10 p-3 dark:bg-accent/20">
@@ -35,7 +49,7 @@ export function DashboardSummary({ total, byCategory, monthLabel, formatCurrency
           </div>
         </div>
       </div>
-      <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-surface-800 dark:bg-surface-900 sm:col-span-2 lg:col-span-1">
+      <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-surface-800 dark:bg-surface-900">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-accent/10 p-3 dark:bg-accent/20">
             <Layers className="h-6 w-6 text-accent" />

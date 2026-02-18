@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { useExpenses, useMonthRange } from './hooks/useExpenses';
 import { useMonthSummary } from './hooks/useMonthSummary';
 import { useAuthOptional } from './context/AuthContext';
@@ -9,6 +10,8 @@ import { DashboardSummary, CategoryBreakdownTable } from './components/Dashboard
 import { DashboardCharts } from './components/DashboardCharts';
 import { AuthScreen } from './components/AuthScreen';
 import { MigrateLocalBanner } from './components/MigrateLocalBanner';
+import { ExpenseFilters, type ExpenseFilters as ExpenseFiltersType } from './components/ExpenseFilters';
+import { isSavingsCategory, getCategoryById } from './lib/categories';
 import { format } from 'date-fns';
 
 function formatCurrency(amount: number): string {
@@ -21,7 +24,83 @@ export default function App() {
   const auth = useAuthOptional();
   const { year, month, setMonth, label } = useMonthRange();
   const { expenses, loading, addExpense, updateExpense, deleteExpense, refresh } = useExpenses(year, month);
-  const { total, byCategory, daily } = useMonthSummary(expenses);
+  const { total, savings, byCategory, daily } = useMonthSummary(expenses);
+
+  const [filters, setFilters] = useState<ExpenseFiltersType>({
+    categoryId: 'all',
+    searchQuery: '',
+    monthFilter: 'all',
+    sortBy: 'date',
+    sortOrder: 'desc',
+    includeSavings: true,
+  });
+
+  // Get available months from expenses
+  const availableMonths = useMemo(() => {
+    const monthSet = new Set<string>();
+    expenses.forEach((e) => {
+      const [year, month] = e.date.split('-');
+      monthSet.add(`${year}-${month}`);
+    });
+    return Array.from(monthSet).sort().reverse(); // Most recent first
+  }, [expenses]);
+
+  // Filter and sort expenses
+  const filteredExpenses = useMemo(() => {
+    let filtered = [...expenses];
+
+    // Filter by savings inclusion
+    if (!filters.includeSavings) {
+      filtered = filtered.filter((e) => !isSavingsCategory(e.categoryId));
+    }
+
+    // Filter by month
+    if (filters.monthFilter !== 'all') {
+      filtered = filtered.filter((e) => {
+        const [year, month] = e.date.split('-');
+        return `${year}-${month}` === filters.monthFilter;
+      });
+    }
+
+    // Filter by category
+    if (filters.categoryId !== 'all') {
+      filtered = filtered.filter((e) => e.categoryId === filters.categoryId);
+    }
+
+    // Filter by search query
+    if (filters.searchQuery.trim()) {
+      const query = filters.searchQuery.toLowerCase();
+      filtered = filtered.filter((e) => e.note.toLowerCase().includes(query));
+    }
+
+    // Sort expenses
+    filtered.sort((a, b) => {
+      let comparison = 0;
+
+      switch (filters.sortBy) {
+        case 'date':
+          comparison = a.date.localeCompare(b.date);
+          break;
+        case 'amount':
+          comparison = a.amount - b.amount;
+          break;
+        case 'category':
+          const catA = getCategoryById(a.categoryId).label;
+          const catB = getCategoryById(b.categoryId).label;
+          comparison = catA.localeCompare(catB);
+          break;
+      }
+
+      return filters.sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [expenses, filters]);
+
+  // Calculate total amount for filtered expenses
+  const filteredTotalAmount = useMemo(() => {
+    return filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+  }, [filteredExpenses]);
 
   const defaultDate = format(new Date(), 'yyyy-MM-dd');
 
@@ -44,7 +123,7 @@ export default function App() {
         {/* Dashboard */}
         <section className="animate-fade-in">
           <h2 className="mb-4 font-display text-lg font-bold text-surface-900 dark:text-white">Dashboard</h2>
-          <DashboardSummary total={total} byCategory={byCategory} monthLabel={label} formatCurrency={formatCurrency} />
+          <DashboardSummary total={total} savings={savings} byCategory={byCategory} monthLabel={label} formatCurrency={formatCurrency} />
           <div className="mt-6">
             <DashboardCharts
               byCategory={byCategory}
@@ -69,7 +148,17 @@ export default function App() {
               Loading…
             </div>
           ) : (
-            <ExpenseList expenses={expenses} onEdit={updateExpense} onDelete={deleteExpense} formatCurrency={formatCurrency} />
+            <>
+              <ExpenseFilters
+                filters={filters}
+                onFiltersChange={setFilters}
+                expenseCount={filteredExpenses.length}
+                totalAmount={filteredTotalAmount}
+                formatCurrency={formatCurrency}
+                availableMonths={availableMonths}
+              />
+              <ExpenseList expenses={filteredExpenses} onEdit={updateExpense} onDelete={deleteExpense} formatCurrency={formatCurrency} />
+            </>
           )}
         </section>
       </div>

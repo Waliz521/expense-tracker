@@ -47,3 +47,10 @@ export function getCategoriesByGroup(): Record<string, Array<(typeof EXPENSE_CAT
   }
   return map;
 }
+
+/**
+ * Check if a category is savings/investments (should be excluded from expense calculations)
+ */
+export function isSavingsCategory(categoryId: string): boolean {
+  return categoryId === 'investments';
+}

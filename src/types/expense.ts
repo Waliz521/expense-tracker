@@ -19,7 +19,8 @@ export interface DailyTotal {
 export interface MonthSummary {
   year: number;
   month: number;
-  total: number;
-  byCategory: CategorySummary[];
-  daily: DailyTotal[];
+  total: number; // Total expenses (excluding savings)
+  savings: number; // Total savings/investments
+  byCategory: CategorySummary[]; // Categories excluding savings
+  daily: DailyTotal[]; // Daily totals excluding savings
 }

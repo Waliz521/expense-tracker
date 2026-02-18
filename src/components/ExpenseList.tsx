@@ -18,7 +18,9 @@ export function ExpenseList({ expenses, onEdit, onDelete, formatCurrency }: Expe
   if (expenses.length === 0) {
     return (
       <div className="rounded-2xl border border-surface-200 bg-white p-8 text-center dark:border-surface-800 dark:bg-surface-900">
-        <p className="text-surface-500 dark:text-surface-400">No expenses this month. Add one above.</p>
+        <p className="text-surface-500 dark:text-surface-400">
+          No expenses match your filters. Try adjusting your search or filter criteria.
+        </p>
       </div>
     );
   }

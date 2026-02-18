@@ -1,37 +1,47 @@
 import { useMemo } from 'react';
 import type { ExpenseEntry } from '../lib/db';
 import type { CategorySummary, DailyTotal } from '../types/expense';
-import { CATEGORY_IDS } from '../lib/categories';
+import { CATEGORY_IDS, isSavingsCategory } from '../lib/categories';
 
 export function useMonthSummary(expenses: ExpenseEntry[]) {
   return useMemo(() => {
-    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    // Separate expenses from savings
+    const expenseEntries = expenses.filter((e) => !isSavingsCategory(e.categoryId));
+    const savingsEntries = expenses.filter((e) => isSavingsCategory(e.categoryId));
 
+    // Calculate total expenses (excluding savings)
+    const total = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
+    
+    // Calculate total savings
+    const savings = savingsEntries.reduce((sum, e) => sum + e.amount, 0);
+
+    // Calculate by category (excluding savings)
     const byCategoryMap = new Map<string, { total: number; count: number }>();
     for (const id of CATEGORY_IDS) {
-      byCategoryMap.set(id, { total: 0, count: 0 });
+      if (!isSavingsCategory(id)) {
+        byCategoryMap.set(id, { total: 0, count: 0 });
+      }
     }
-    for (const e of expenses) {
+    for (const e of expenseEntries) {
       const cur = byCategoryMap.get(e.categoryId) ?? { total: 0, count: 0 };
       cur.total += e.amount;
       cur.count += 1;
       byCategoryMap.set(e.categoryId, cur);
     }
 
-    const byCategory: CategorySummary[] = CATEGORY_IDS.map((categoryId) => {
-      const { total: catTotal, count } = byCategoryMap.get(categoryId) ?? { total: 0, count: 0 };
-      return {
+    const byCategory: CategorySummary[] = Array.from(byCategoryMap.entries())
+      .map(([categoryId, { total: catTotal, count }]) => ({
         categoryId,
         total: catTotal,
         count,
         percentage: total > 0 ? (catTotal / total) * 100 : 0,
-      };
-    })
+      }))
       .filter((c) => c.total > 0)
       .sort((a, b) => b.total - a.total);
 
+    // Calculate daily totals (excluding savings)
     const dailyMap = new Map<string, { total: number; count: number }>();
-    for (const e of expenses) {
+    for (const e of expenseEntries) {
       const cur = dailyMap.get(e.date) ?? { total: 0, count: 0 };
       cur.total += e.amount;
       cur.count += 1;
@@ -41,6 +51,6 @@ export function useMonthSummary(expenses: ExpenseEntry[]) {
       .map(([date, { total, count }]) => ({ date, total, count }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    return { total, byCategory, daily };
+    return { total, savings, byCategory, daily };
   }, [expenses]);
 }
