@@ -15,23 +15,23 @@ export function MonthPicker({ year, month, onMonthChange }: MonthPickerProps) {
     current.getFullYear() === new Date().getFullYear() && current.getMonth() === new Date().getMonth();
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-surface-200 bg-white px-2 py-1.5 dark:border-surface-800 dark:bg-surface-900">
+    <div className="flex items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-2 py-1.5 dark:border-surface-800 dark:bg-surface-900 w-full sm:w-auto">
       <button
         type="button"
         onClick={() => onMonthChange(prev.getFullYear(), prev.getMonth() + 1)}
-        className="rounded-lg p-2 text-surface-600 transition hover:bg-surface-100 hover:text-surface-900 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-white"
+        className="rounded-lg p-2 text-surface-600 transition hover:bg-surface-100 hover:text-surface-900 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-white shrink-0"
         aria-label="Previous month"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
-      <span className="min-w-[140px] text-center font-display font-semibold text-surface-900 dark:text-white">
+      <span className="min-w-[140px] flex-1 text-center font-display font-semibold text-surface-900 dark:text-white">
         {format(current, 'MMMM yyyy')}
       </span>
       <button
         type="button"
         onClick={() => onMonthChange(next.getFullYear(), next.getMonth() + 1)}
         disabled={isCurrentMonth}
-        className="rounded-lg p-2 text-surface-600 transition hover:bg-surface-100 hover:text-surface-900 disabled:opacity-50 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-white"
+        className="rounded-lg p-2 text-surface-600 transition hover:bg-surface-100 hover:text-surface-900 disabled:opacity-50 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-white shrink-0"
         aria-label="Next month"
       >
         <ChevronRight className="h-5 w-5" />

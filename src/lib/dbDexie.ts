@@ -1,16 +1,18 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { ExpenseEntry } from './db.types';
+import type { ExpenseEntry, IncomeEntry } from './db.types';
 
 const DB_NAME = 'ExpenseTrackerDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 class ExpenseDatabase extends Dexie {
   expenses!: EntityTable<ExpenseEntry, 'id'>;
+  income!: EntityTable<IncomeEntry, 'id'>;
 
   constructor() {
     super(DB_NAME);
     this.version(DB_VERSION).stores({
       expenses: 'id, date, categoryId, createdAt',
+      income: 'id, date, source, createdAt',
     });
   }
 }
@@ -47,4 +49,33 @@ export async function getAllExpensesDexie(): Promise<ExpenseEntry[]> {
 
 export async function clearAllExpensesDexie(): Promise<void> {
   await db.expenses.clear();
+}
+
+// Income functions
+export async function addIncomeDexie(entry: Omit<IncomeEntry, 'id' | 'createdAt'>): Promise<IncomeEntry> {
+  const id = crypto.randomUUID();
+  const createdAt = Date.now();
+  const full: IncomeEntry = { ...entry, id, createdAt };
+  await db.income.add(full);
+  return full;
+}
+
+export async function updateIncomeDexie(id: string, updates: Partial<Omit<IncomeEntry, 'id' | 'createdAt'>>): Promise<void> {
+  await db.income.update(id, updates);
+}
+
+export async function deleteIncomeDexie(id: string): Promise<void> {
+  await db.income.delete(id);
+}
+
+export async function getIncomeByMonthDexie(year: number, month: number): Promise<IncomeEntry[]> {
+  const start = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const end = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  const list = await db.income.where('date').between(start, end, true, true).sortBy('date');
+  return list.reverse();
+}
+
+export async function getAllIncomeDexie(): Promise<IncomeEntry[]> {
+  return db.income.orderBy('date').reverse().toArray();
 }

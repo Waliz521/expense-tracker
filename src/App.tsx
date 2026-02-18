@@ -1,11 +1,15 @@
 import { useState, useMemo } from 'react';
 import { useExpenses, useMonthRange } from './hooks/useExpenses';
+import { useIncome } from './hooks/useIncome';
+import { useIncomeSummary } from './hooks/useIncomeSummary';
 import { useMonthSummary } from './hooks/useMonthSummary';
 import { useAuthOptional } from './context/AuthContext';
 import { isSupabaseConfigured } from './lib/supabase';
 import { Layout } from './components/Layout';
 import { AddExpense } from './components/AddExpense';
+import { AddIncome } from './components/AddIncome';
 import { ExpenseList } from './components/ExpenseList';
+import { IncomeList } from './components/IncomeList';
 import { DashboardSummary, CategoryBreakdownTable } from './components/DashboardSummary';
 import { DashboardCharts } from './components/DashboardCharts';
 import { AuthScreen } from './components/AuthScreen';
@@ -22,9 +26,11 @@ function formatCurrency(amount: number): string {
 
 export default function App() {
   const auth = useAuthOptional();
-  const { year, month, setMonth, label } = useMonthRange();
+  const { year, month, setMonth } = useMonthRange();
   const { expenses, loading, addExpense, updateExpense, deleteExpense, refresh } = useExpenses(year, month);
+  const { income, loading: incomeLoading, addIncome, updateIncome, deleteIncome } = useIncome(year, month);
   const { total, savings, byCategory, daily } = useMonthSummary(expenses);
+  const { total: incomeTotal } = useIncomeSummary(income);
 
   const [filters, setFilters] = useState<ExpenseFiltersType>({
     categoryId: 'all',
@@ -123,7 +129,7 @@ export default function App() {
         {/* Dashboard */}
         <section className="animate-fade-in">
           <h2 className="mb-4 font-display text-lg font-bold text-surface-900 dark:text-white">Dashboard</h2>
-          <DashboardSummary total={total} savings={savings} byCategory={byCategory} monthLabel={label} formatCurrency={formatCurrency} />
+          <DashboardSummary total={total} savings={savings} income={incomeTotal} formatCurrency={formatCurrency} />
           <div className="mt-6">
             <DashboardCharts
               byCategory={byCategory}
@@ -137,29 +143,49 @@ export default function App() {
           </div>
         </section>
 
-        {/* Add expense + List */}
+        {/* Income & Expenses Section */}
         <section className="animate-fade-in">
-          <h2 className="mb-4 font-display text-lg font-bold text-surface-900 dark:text-white">Expenses</h2>
-          <div className="mb-6">
-            <AddExpense defaultDate={defaultDate} onAdd={addExpense} />
-          </div>
-          {loading ? (
-            <div className="rounded-2xl border border-surface-200 bg-white p-8 text-center text-surface-500 dark:border-surface-800 dark:bg-surface-900">
-              Loading…
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="font-display text-lg font-bold text-surface-900 dark:text-white">Transactions</h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <AddIncome defaultDate={defaultDate} onAdd={addIncome} />
+              <AddExpense defaultDate={defaultDate} onAdd={addExpense} />
             </div>
-          ) : (
-            <>
-              <ExpenseFilters
-                filters={filters}
-                onFiltersChange={setFilters}
-                expenseCount={filteredExpenses.length}
-                totalAmount={filteredTotalAmount}
-                formatCurrency={formatCurrency}
-                availableMonths={availableMonths}
-              />
-              <ExpenseList expenses={filteredExpenses} onEdit={updateExpense} onDelete={deleteExpense} formatCurrency={formatCurrency} />
-            </>
-          )}
+          </div>
+
+          {/* Income List */}
+          <div className="mb-8">
+            <h3 className="mb-4 font-display text-base font-semibold text-surface-700 dark:text-surface-300">Income</h3>
+            {incomeLoading ? (
+              <div className="rounded-2xl border border-surface-200 bg-white p-8 text-center text-surface-500 dark:border-surface-800 dark:bg-surface-900">
+                Loading…
+              </div>
+            ) : (
+              <IncomeList income={income} onEdit={updateIncome} onDelete={deleteIncome} formatCurrency={formatCurrency} />
+            )}
+          </div>
+
+          {/* Expenses List */}
+          <div>
+            <h3 className="mb-4 font-display text-base font-semibold text-surface-700 dark:text-surface-300">Expenses</h3>
+            {loading ? (
+              <div className="rounded-2xl border border-surface-200 bg-white p-8 text-center text-surface-500 dark:border-surface-800 dark:bg-surface-900">
+                Loading…
+              </div>
+            ) : (
+              <>
+                <ExpenseFilters
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  expenseCount={filteredExpenses.length}
+                  totalAmount={filteredTotalAmount}
+                  formatCurrency={formatCurrency}
+                  availableMonths={availableMonths}
+                />
+                <ExpenseList expenses={filteredExpenses} onEdit={updateExpense} onDelete={deleteExpense} formatCurrency={formatCurrency} />
+              </>
+            )}
+          </div>
         </section>
       </div>
     </Layout>

@@ -8,3 +8,12 @@ export interface ExpenseEntry {
   note: string;
   createdAt: number;
 }
+
+export interface IncomeEntry {
+  id: string;
+  date: string;
+  amount: number;
+  source: string; // e.g., "Salary", "Freelance", "Investment", etc.
+  note: string;
+  createdAt: number;
+}

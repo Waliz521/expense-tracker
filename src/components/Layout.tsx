@@ -67,24 +67,31 @@ export function Layout({ children, year, month, onMonthChange }: LayoutProps) {
           {/* Mobile: navbar dropdown */}
           {mobileMenuOpen && (
             <nav className="mt-3 flex flex-col gap-3 rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-800 dark:bg-surface-800 md:hidden">
+              {/* Month Section */}
               <div className="flex flex-col gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">Month</span>
-                <MonthPicker year={year} month={month} onMonthChange={onMonthChange} />
+                <span className="text-xs font-semibold uppercase tracking-wider text-surface-500 text-center">Month</span>
+                <div className="flex justify-center">
+                  <MonthPicker year={year} month={month} onMonthChange={onMonthChange} />
+                </div>
               </div>
+              
+              {/* Theme and Sign Out in Single Row */}
               <div className="flex flex-col gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">Theme</span>
-                <ThemeToggle />
+                <span className="text-xs font-semibold uppercase tracking-wider text-surface-500 text-center">Theme</span>
+                <div className="flex items-center justify-center gap-3">
+                  <ThemeToggle />
+                  {showSignOut && (
+                    <button
+                      type="button"
+                      onClick={() => { auth?.signOut(); setMobileMenuOpen(false); }}
+                      className="flex items-center justify-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm font-medium text-surface-700 transition hover:bg-surface-100 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-300 dark:hover:bg-surface-700 whitespace-nowrap"
+                    >
+                      <LogOut className="h-4 w-4 shrink-0" />
+                      <span>Sign out</span>
+                    </button>
+                  )}
+                </div>
               </div>
-              {showSignOut && (
-                <button
-                  type="button"
-                  onClick={() => { auth?.signOut(); setMobileMenuOpen(false); }}
-                  className="flex items-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-3 text-sm font-medium text-surface-700 transition hover:bg-surface-100 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-300 dark:hover:bg-surface-700"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </button>
-              )}
             </nav>
           )}
         </div>

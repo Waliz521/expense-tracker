@@ -1,4 +1,4 @@
-import { TrendingUp, Calendar, Layers, PiggyBank } from 'lucide-react';
+import { TrendingUp, Layers, PiggyBank } from 'lucide-react';
 import type { CategorySummary } from '../types/expense';
 import { getCategoryById } from '../lib/categories';
 import { CategoryIcon } from './icons';
@@ -6,14 +6,26 @@ import { CategoryIcon } from './icons';
 interface DashboardSummaryProps {
   total: number;
   savings: number;
-  byCategory: CategorySummary[];
-  monthLabel: string;
+  income: number;
   formatCurrency: (n: number) => string;
 }
 
-export function DashboardSummary({ total, savings, byCategory, monthLabel, formatCurrency }: DashboardSummaryProps) {
+export function DashboardSummary({ total, savings, income, formatCurrency }: DashboardSummaryProps) {
+  const netAmount = income - total;
+  
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-surface-800 dark:bg-surface-900">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-green-500/10 p-3 dark:bg-green-500/20">
+            <span className="text-xl font-bold text-green-600 dark:text-green-400">Rs</span>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Income</p>
+            <p className="font-display text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(income)}</p>
+          </div>
+        </div>
+      </div>
       <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-surface-800 dark:bg-surface-900">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-accent/10 p-3 dark:bg-accent/20">
@@ -40,23 +52,14 @@ export function DashboardSummary({ total, savings, byCategory, monthLabel, forma
       )}
       <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-surface-800 dark:bg-surface-900">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-accent/10 p-3 dark:bg-accent/20">
-            <Calendar className="h-6 w-6 text-accent" />
+          <div className={`rounded-xl p-3 ${netAmount >= 0 ? 'bg-green-500/10 dark:bg-green-500/20' : 'bg-red-500/10 dark:bg-red-500/20'}`}>
+            <Layers className={`h-6 w-6 ${netAmount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
           </div>
           <div>
-            <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Period</p>
-            <p className="font-display text-xl font-bold capitalize text-surface-900 dark:text-white">{monthLabel}</p>
-          </div>
-        </div>
-      </div>
-      <div className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm dark:border-surface-800 dark:bg-surface-900">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-accent/10 p-3 dark:bg-accent/20">
-            <Layers className="h-6 w-6 text-accent" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Categories used</p>
-            <p className="font-display text-2xl font-bold text-surface-900 dark:text-white">{byCategory.length}</p>
+            <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Net</p>
+            <p className={`font-display text-2xl font-bold ${netAmount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {formatCurrency(netAmount)}
+            </p>
           </div>
         </div>
       </div>

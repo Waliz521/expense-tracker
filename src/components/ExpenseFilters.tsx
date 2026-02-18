@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Filter, X, Search, Calendar, DollarSign, Layers } from 'lucide-react';
+import { Filter, X, Search, Calendar, Layers } from 'lucide-react';
 import { EXPENSE_CATEGORIES } from '../lib/categories';
 import type { CategoryId } from '../lib/categories';
 import { CustomDropdown, type DropdownOption } from './CustomDropdown';
@@ -96,12 +96,12 @@ export function ExpenseFilters({ filters, onFiltersChange, expenseCount, totalAm
     {
       value: 'amount-desc',
       label: 'Amount (High to Low)',
-      icon: <DollarSign className="h-4 w-4" />,
+      icon: <span className="text-xs font-semibold">Rs</span>,
     },
     {
       value: 'amount-asc',
       label: 'Amount (Low to High)',
-      icon: <DollarSign className="h-4 w-4" />,
+      icon: <span className="text-xs font-semibold">Rs</span>,
     },
     {
       value: 'category-asc',
