@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
 import { getCategoriesByGroup } from '../lib/categories';
 import { CategoryIcon } from './icons';
+import { DatePickerInput } from './DatePickerInput';
 import type { CategoryId } from '../lib/categories';
 
 interface AddExpenseProps {
@@ -54,13 +55,7 @@ export function AddExpense({ defaultDate, onAdd }: AddExpenseProps) {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-surface-800 dark:text-surface-200">Date</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                className="w-full rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-surface-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-surface-800 dark:bg-surface-800 dark:text-white"
-              />
+              <DatePickerInput value={date} onChange={setDate} required />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-surface-800 dark:text-surface-200">Amount</label>

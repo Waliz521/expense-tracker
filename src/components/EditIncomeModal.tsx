@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { DatePickerInput } from './DatePickerInput';
 import type { IncomeEntry } from '../lib/db';
 
 const INCOME_SOURCES = [
@@ -67,13 +68,7 @@ export function EditIncomeModal({ income, onSave, onClose }: EditIncomeModalProp
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-surface-800 dark:text-surface-200">Date</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                className="w-full rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-surface-900 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 dark:border-surface-800 dark:bg-surface-800 dark:text-white"
-              />
+              <DatePickerInput value={date} onChange={setDate} required accentGreen />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-surface-800 dark:text-surface-200">Amount</label>
