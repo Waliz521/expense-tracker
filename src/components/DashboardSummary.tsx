@@ -11,7 +11,7 @@ interface DashboardSummaryProps {
 }
 
 export function DashboardSummary({ total, savings, income, formatCurrency }: DashboardSummaryProps) {
-  const netAmount = income - total;
+  const netAmount = income - total - savings;
   
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
