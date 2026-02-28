@@ -7,10 +7,12 @@ interface DashboardSummaryProps {
   total: number;
   savings: number;
   income: number;
+  /** Carried over from previous month — shown as flagged, not counted as savings */
+  carriedOver?: number;
   formatCurrency: (n: number) => string;
 }
 
-export function DashboardSummary({ total, savings, income, formatCurrency }: DashboardSummaryProps) {
+export function DashboardSummary({ total, savings, income, carriedOver = 0, formatCurrency }: DashboardSummaryProps) {
   const netAmount = income - total - savings;
   
   return (
@@ -23,6 +25,11 @@ export function DashboardSummary({ total, savings, income, formatCurrency }: Das
           <div>
             <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Income</p>
             <p className="font-display text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(income)}</p>
+            {carriedOver > 0 && (
+              <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+                incl. {formatCurrency(carriedOver)} from previous month
+              </p>
+            )}
           </div>
         </div>
       </div>

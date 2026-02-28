@@ -5,20 +5,24 @@ import {
   updateExpenseSupabase,
   deleteExpenseSupabase,
   getExpensesByMonthSupabase,
+  getExpensesByDateRangeSupabase,
   addIncomeSupabase,
   updateIncomeSupabase,
   deleteIncomeSupabase,
   getIncomeByMonthSupabase,
+  getIncomeByDateRangeSupabase,
 } from './dbSupabase';
 import {
   addExpenseDexie,
   updateExpenseDexie,
   deleteExpenseDexie,
   getExpensesByMonthDexie,
+  getExpensesByDateRangeDexie,
   addIncomeDexie,
   updateIncomeDexie,
   deleteIncomeDexie,
   getIncomeByMonthDexie,
+  getIncomeByDateRangeDexie,
 } from './dbDexie';
 
 export type { ExpenseEntry, IncomeEntry } from './db.types';
@@ -43,6 +47,11 @@ export async function getExpensesByMonth(year: number, month: number): Promise<E
   return getExpensesByMonthDexie(year, month);
 }
 
+export async function getExpensesByDateRange(from: string, to: string): Promise<ExpenseEntry[]> {
+  if (isSupabaseConfigured) return getExpensesByDateRangeSupabase(from, to);
+  return getExpensesByDateRangeDexie(from, to);
+}
+
 // Income functions
 export async function addIncome(entry: Omit<IncomeEntry, 'id' | 'createdAt'>): Promise<IncomeEntry> {
   if (isSupabaseConfigured) return addIncomeSupabase(entry);
@@ -62,4 +71,9 @@ export async function deleteIncome(id: string): Promise<void> {
 export async function getIncomeByMonth(year: number, month: number): Promise<IncomeEntry[]> {
   if (isSupabaseConfigured) return getIncomeByMonthSupabase(year, month);
   return getIncomeByMonthDexie(year, month);
+}
+
+export async function getIncomeByDateRange(from: string, to: string): Promise<IncomeEntry[]> {
+  if (isSupabaseConfigured) return getIncomeByDateRangeSupabase(from, to);
+  return getIncomeByDateRangeDexie(from, to);
 }

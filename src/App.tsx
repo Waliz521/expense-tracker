@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useExpenses, useMonthRange } from './hooks/useExpenses';
 import { useIncome } from './hooks/useIncome';
+import { usePreviousMonthNet } from './hooks/usePreviousMonthNet';
 import { useIncomeSummary } from './hooks/useIncomeSummary';
 import { useMonthSummary } from './hooks/useMonthSummary';
 import { useAuthOptional } from './context/AuthContext';
@@ -15,7 +16,11 @@ import { DashboardCharts } from './components/DashboardCharts';
 import { AuthScreen } from './components/AuthScreen';
 import { MigrateLocalBanner } from './components/MigrateLocalBanner';
 import { ExpenseFilters, type ExpenseFilters as ExpenseFiltersType } from './components/ExpenseFilters';
+import { CarryOverBanner } from './components/CarryOverBanner';
+import { ReportModal } from './components/ReportModal';
 import { isSavingsCategory, getCategoryById } from './lib/categories';
+import { getCarriedOverSourceLabel, isCarriedOverIncome } from './lib/carryOver';
+import { FileText } from 'lucide-react';
 import { format } from 'date-fns';
 
 function formatCurrency(amount: number): string {
@@ -31,11 +36,23 @@ export default function App() {
   const { income, loading: incomeLoading, addIncome, updateIncome, deleteIncome } = useIncome(year, month);
   const { total, savings, byCategory, daily } = useMonthSummary(expenses);
   const { total: incomeTotal } = useIncomeSummary(income);
+  const { net: prevMonthNet, loading: prevMonthLoading, prevMonthLabel } = usePreviousMonthNet(year, month);
 
+  const carriedOverAmount = useMemo(
+    () => income.filter((i) => isCarriedOverIncome(i.source)).reduce((s, i) => s + i.amount, 0),
+    [income]
+  );
+
+  const alreadyCarriedOverFromPrev = useMemo(
+    () => income.some((i) => i.source === getCarriedOverSourceLabel(prevMonthLabel)),
+    [income, prevMonthLabel]
+  );
+
+  const [reportOpen, setReportOpen] = useState(false);
   const [filters, setFilters] = useState<ExpenseFiltersType>({
     categoryId: 'all',
     searchQuery: '',
-    monthFilter: 'all',
+    dateScopeFilter: 'today',
     sortBy: 'date',
     sortOrder: 'desc',
     includeSavings: true,
@@ -60,11 +77,15 @@ export default function App() {
       filtered = filtered.filter((e) => !isSavingsCategory(e.categoryId));
     }
 
-    // Filter by month
-    if (filters.monthFilter !== 'all') {
+    // Filter by date scope (today = current date only, month = whole month)
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    if (filters.dateScopeFilter === 'today') {
+      filtered = filtered.filter((e) => e.date === todayStr);
+    } else if (filters.dateScopeFilter !== 'month' && filters.dateScopeFilter !== 'all') {
+      // Specific month (YYYY-MM)
       filtered = filtered.filter((e) => {
-        const [year, month] = e.date.split('-');
-        return `${year}-${month}` === filters.monthFilter;
+        const [y, m] = e.date.split('-');
+        return `${y}-${m}` === filters.dateScopeFilter;
       });
     }
 
@@ -109,6 +130,38 @@ export default function App() {
   }, [filteredExpenses]);
 
   const defaultDate = format(new Date(), 'yyyy-MM-dd');
+  const firstDayOfMonth = `${year}-${String(month).padStart(2, '0')}-01`;
+
+  const handleCarryOver = useCallback(async () => {
+    if (prevMonthNet == null || prevMonthNet <= 0) return;
+    await addIncome({
+      date: firstDayOfMonth,
+      amount: prevMonthNet,
+      source: getCarriedOverSourceLabel(prevMonthLabel),
+      note: `Carried over from ${prevMonthLabel}`,
+    });
+  }, [addIncome, prevMonthNet, prevMonthLabel, firstDayOfMonth]);
+
+  // When editing an expense and changing its date: switch month view if date moved to another month,
+  // and switch to "This Month" filter so the updated expense stays visible
+  const handleUpdateExpense = useCallback(
+    async (
+      id: string,
+      updates: { date?: string; amount?: number; categoryId?: import('./lib/categories').CategoryId; note?: string }
+    ) => {
+      await updateExpense(id, updates);
+      if (updates.date) {
+        const [newYear, newMonth] = updates.date.split('-').map(Number);
+        if (newYear !== year || newMonth !== month) {
+          setMonth(newYear, newMonth);
+        }
+        if (filters.dateScopeFilter === 'today') {
+          setFilters((f) => ({ ...f, dateScopeFilter: 'month' }));
+        }
+      }
+    },
+    [updateExpense, year, month, setMonth, filters.dateScopeFilter]
+  );
 
   const requireAuth = isSupabaseConfigured && auth && !auth.user && !auth.loading;
   if (requireAuth) return <AuthScreen />;
@@ -128,8 +181,33 @@ export default function App() {
         )}
         {/* Dashboard */}
         <section className="animate-fade-in">
-          <h2 className="mb-4 font-display text-lg font-bold text-surface-900 dark:text-white">Dashboard</h2>
-          <DashboardSummary total={total} savings={savings} income={incomeTotal} formatCurrency={formatCurrency} />
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="font-display text-lg font-bold text-surface-900 dark:text-white">Dashboard</h2>
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              className="flex items-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm font-medium text-surface-700 transition hover:bg-surface-50 dark:border-surface-800 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+            >
+              <FileText className="h-4 w-4" />
+              Generate Report
+            </button>
+          </div>
+          {!prevMonthLoading && (
+            <CarryOverBanner
+              amount={prevMonthNet ?? 0}
+              fromMonth={prevMonthLabel}
+              onCarryOver={handleCarryOver}
+              alreadyCarriedOver={alreadyCarriedOverFromPrev}
+              formatCurrency={formatCurrency}
+            />
+          )}
+          <DashboardSummary
+            total={total}
+            savings={savings}
+            income={incomeTotal}
+            carriedOver={carriedOverAmount}
+            formatCurrency={formatCurrency}
+          />
           <div className="mt-6">
             <DashboardCharts
               byCategory={byCategory}
@@ -141,6 +219,9 @@ export default function App() {
           <div className="mt-6">
             <CategoryBreakdownTable byCategory={byCategory} formatCurrency={formatCurrency} />
           </div>
+          {reportOpen && (
+            <ReportModal onClose={() => setReportOpen(false)} formatCurrency={formatCurrency} />
+          )}
         </section>
 
         {/* Income & Expenses Section */}
@@ -182,7 +263,7 @@ export default function App() {
                   formatCurrency={formatCurrency}
                   availableMonths={availableMonths}
                 />
-                <ExpenseList expenses={filteredExpenses} onEdit={updateExpense} onDelete={deleteExpense} formatCurrency={formatCurrency} />
+                <ExpenseList expenses={filteredExpenses} onEdit={handleUpdateExpense} onDelete={deleteExpense} formatCurrency={formatCurrency} />
               </>
             )}
           </div>

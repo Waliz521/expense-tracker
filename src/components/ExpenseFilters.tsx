@@ -12,7 +12,7 @@ export interface ExpenseFilters {
   sortBy: 'date' | 'amount' | 'category';
   sortOrder: 'asc' | 'desc';
   includeSavings: boolean;
-  monthFilter: string | 'all'; // Format: 'YYYY-MM' or 'all'
+  dateScopeFilter: 'today' | 'month' | 'all' | string; // 'today' = current date only, 'month' = whole month, 'all' | 'YYYY-MM' for multi-month
 }
 
 interface ExpenseFiltersProps {
@@ -34,7 +34,7 @@ export function ExpenseFilters({ filters, onFiltersChange, expenseCount, totalAm
   const hasActiveFilters =
     filters.categoryId !== 'all' ||
     filters.searchQuery !== '' ||
-    filters.monthFilter !== 'all' ||
+    filters.dateScopeFilter !== 'today' ||
     filters.sortBy !== 'date' ||
     filters.sortOrder !== 'desc' ||
     !filters.includeSavings;
@@ -43,7 +43,7 @@ export function ExpenseFilters({ filters, onFiltersChange, expenseCount, totalAm
     onFiltersChange({
       categoryId: 'all',
       searchQuery: '',
-      monthFilter: 'all',
+      dateScopeFilter: 'today',
       sortBy: 'date',
       sortOrder: 'desc',
       includeSavings: true,
@@ -64,21 +64,19 @@ export function ExpenseFilters({ filters, onFiltersChange, expenseCount, totalAm
     })),
   ];
 
-  // Month filter options
-  const monthOptions: DropdownOption<string>[] = [
-    {
-      value: 'all',
-      label: 'All Months',
-      icon: <Calendar className="h-4 w-4" />,
-    },
-    ...availableMonths.map((monthStr) => {
-      const date = parseISO(`${monthStr}-01`);
-      return {
-        value: monthStr,
-        label: format(date, 'MMMM yyyy'),
-        icon: <Calendar className="h-4 w-4" />,
-      };
-    }),
+  // Date scope options: Today (default), This Month, optionally All Months + specific months
+  const dateScopeOptions: DropdownOption<string>[] = [
+    { value: 'today', label: 'Today', icon: <Calendar className="h-4 w-4" /> },
+    { value: 'month', label: 'This Month', icon: <Calendar className="h-4 w-4" /> },
+    ...(availableMonths.length > 1
+      ? [
+          { value: 'all', label: 'All Months', icon: <Calendar className="h-4 w-4" /> },
+          ...availableMonths.map((monthStr) => {
+            const date = parseISO(`${monthStr}-01`);
+            return { value: monthStr, label: format(date, 'MMMM yyyy'), icon: <Calendar className="h-4 w-4" /> };
+          }),
+        ]
+      : []),
   ];
 
   // Sort dropdown options
@@ -147,16 +145,14 @@ export function ExpenseFilters({ filters, onFiltersChange, expenseCount, totalAm
             />
           </div>
 
-          {/* Month filter */}
-          {availableMonths.length > 0 && (
-            <div className="w-[180px]">
-              <CustomDropdown
-                options={monthOptions}
-                value={filters.monthFilter}
-                onChange={(value) => updateFilter('monthFilter', value)}
-              />
-            </div>
-          )}
+          {/* Date scope filter (Today / This Month) */}
+          <div className="w-[180px]">
+            <CustomDropdown
+              options={dateScopeOptions}
+              value={filters.dateScopeFilter}
+              onChange={(value) => updateFilter('dateScopeFilter', value)}
+            />
+          </div>
 
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
@@ -178,8 +174,7 @@ export function ExpenseFilters({ filters, onFiltersChange, expenseCount, totalAm
             value={`${filters.sortBy}-${filters.sortOrder}`}
             onChange={(value) => {
               const [sortBy, sortOrder] = value.split('-') as [ExpenseFilters['sortBy'], ExpenseFilters['sortOrder']];
-              updateFilter('sortBy', sortBy);
-              updateFilter('sortOrder', sortOrder);
+              onFiltersChange({ ...filters, sortBy, sortOrder });
             }}
           />
         </div>

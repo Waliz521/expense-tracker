@@ -43,6 +43,11 @@ export async function getExpensesByMonthDexie(year: number, month: number): Prom
   return list.reverse();
 }
 
+export async function getExpensesByDateRangeDexie(from: string, to: string): Promise<ExpenseEntry[]> {
+  const list = await db.expenses.where('date').between(from, to, true, true).sortBy('date');
+  return list.reverse();
+}
+
 export async function getAllExpensesDexie(): Promise<ExpenseEntry[]> {
   return db.expenses.orderBy('date').reverse().toArray();
 }
@@ -73,6 +78,11 @@ export async function getIncomeByMonthDexie(year: number, month: number): Promis
   const lastDay = new Date(year, month, 0).getDate();
   const end = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
   const list = await db.income.where('date').between(start, end, true, true).sortBy('date');
+  return list.reverse();
+}
+
+export async function getIncomeByDateRangeDexie(from: string, to: string): Promise<IncomeEntry[]> {
+  const list = await db.income.where('date').between(from, to, true, true).sortBy('date');
   return list.reverse();
 }
 

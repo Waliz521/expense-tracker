@@ -16,6 +16,8 @@ interface DatePickerInputProps {
   /** Use green focus ring (e.g. for income forms) */
   accentGreen?: boolean;
   id?: string;
+  /** Open calendar above input (useful in modals near bottom of screen) */
+  placement?: 'bottom' | 'top';
 }
 
 function toDate(str: string): Date | undefined {
@@ -38,6 +40,7 @@ export function DatePickerInput({
   required: isRequired = false,
   accentGreen = false,
   id,
+  placement = 'bottom',
 }: DatePickerInputProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -76,7 +79,9 @@ export function DatePickerInput({
 
       {open && (
         <div
-          className="date-picker-popover absolute left-0 top-full z-50 mt-2 rounded-2xl border border-surface-200 bg-white p-4 shadow-xl dark:border-surface-800 dark:bg-surface-900"
+          className={`date-picker-popover absolute left-0 z-50 rounded-2xl border border-surface-200 bg-white p-4 shadow-xl dark:border-surface-800 dark:bg-surface-900 ${
+            placement === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+          }`}
           role="dialog"
           aria-label="Calendar"
         >

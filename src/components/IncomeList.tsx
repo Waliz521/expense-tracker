@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { Trash2, Pencil } from 'lucide-react';
 import { EditIncomeModal } from './EditIncomeModal';
+import { isCarriedOverIncome } from '../lib/carryOver';
 import type { IncomeEntry } from '../lib/db';
 
 interface IncomeListProps {
@@ -49,6 +50,11 @@ export function IncomeList({ income, onEdit, onDelete, formatCurrency }: IncomeL
                   <span className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-green-600 dark:text-green-400">Rs</span>
                     {entry.source}
+                    {isCarriedOverIncome(entry.source) && (
+                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                        From previous month
+                      </span>
+                    )}
                   </span>
                 </td>
                 <td className="max-w-[180px] truncate px-4 py-3 text-surface-600 dark:text-surface-400" title={entry.note}>

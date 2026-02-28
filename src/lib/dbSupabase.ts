@@ -83,6 +83,18 @@ export async function getExpensesByMonthSupabase(
   return (data ?? []).map(toEntry);
 }
 
+export async function getExpensesByDateRangeSupabase(from: string, to: string): Promise<ExpenseEntry[]> {
+  const { data, error } = await supabase
+    .from(EXPENSES_TABLE)
+    .select('id, date, amount, category_id, note, created_at')
+    .gte('date', from)
+    .lte('date', to)
+    .order('date', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map(toEntry);
+}
+
 // Income functions
 function toIncomeEntry(row: {
   id: string;
@@ -156,6 +168,18 @@ export async function getIncomeByMonthSupabase(
     .select('id, date, amount, source, note, created_at')
     .gte('date', start)
     .lte('date', end)
+    .order('date', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map(toIncomeEntry);
+}
+
+export async function getIncomeByDateRangeSupabase(from: string, to: string): Promise<IncomeEntry[]> {
+  const { data, error } = await supabase
+    .from(INCOME_TABLE)
+    .select('id, date, amount, source, note, created_at')
+    .gte('date', from)
+    .lte('date', to)
     .order('date', { ascending: false });
 
   if (error) throw error;
