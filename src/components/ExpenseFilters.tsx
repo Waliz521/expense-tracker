@@ -9,7 +9,7 @@ import { format, parseISO } from 'date-fns';
 export interface ExpenseFilters {
   categoryId: CategoryId | 'all';
   searchQuery: string;
-  sortBy: 'date' | 'amount' | 'category';
+  sortBy: 'date' | 'amount' | 'category' | 'note';
   sortOrder: 'asc' | 'desc';
   includeSavings: boolean;
   dateScopeFilter: 'today' | 'month' | 'all' | string; // 'today' = current date only, 'month' = whole month, 'all' | 'YYYY-MM' for multi-month
@@ -110,6 +110,16 @@ export function ExpenseFilters({ filters, onFiltersChange, expenseCount, totalAm
       value: 'category-desc',
       label: 'Category (Z-A)',
       icon: <Layers className="h-4 w-4" />,
+    },
+    {
+      value: 'note-asc',
+      label: 'Note (A-Z)',
+      icon: <Search className="h-4 w-4" />,
+    },
+    {
+      value: 'note-desc',
+      label: 'Note (Z-A)',
+      icon: <Search className="h-4 w-4" />,
     },
   ];
 

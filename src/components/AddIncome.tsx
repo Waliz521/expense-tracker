@@ -1,18 +1,7 @@
 import { useState } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
+import { INCOME_SOURCES } from '../lib/incomeSources';
 import { DatePickerInput } from './DatePickerInput';
-
-const INCOME_SOURCES = [
-  'Salary',
-  'Office',
-  'Freelance',
-  'Business',
-  'Investment',
-  'Rental',
-  'Gift',
-  'Bonus',
-  'Other',
-];
 
 interface AddIncomeProps {
   defaultDate: string;
@@ -22,7 +11,7 @@ interface AddIncomeProps {
 export function AddIncome({ defaultDate, onAdd }: AddIncomeProps) {
   const [date, setDate] = useState(defaultDate);
   const [amount, setAmount] = useState('');
-  const [source, setSource] = useState(INCOME_SOURCES[0]);
+  const [source, setSource] = useState<string>(INCOME_SOURCES[0]);
   const [note, setNote] = useState('');
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);

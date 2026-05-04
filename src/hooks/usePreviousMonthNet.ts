@@ -3,8 +3,28 @@ import { getExpensesByMonth, getIncomeByMonth } from '../lib/db';
 import { isSavingsCategory } from '../lib/categories';
 import { format } from 'date-fns';
 
+/** Previous calendar month relative to the dashboard month being viewed. */
+export async function fetchPreviousMonthClosingBalance(viewYear: number, viewMonth: number): Promise<number> {
+  const prevMonth = viewMonth === 1 ? 12 : viewMonth - 1;
+  const prevYear = viewMonth === 1 ? viewYear - 1 : viewYear;
+
+  const [prevIncome, prevExpenses] = await Promise.all([
+    getIncomeByMonth(prevYear, prevMonth),
+    getExpensesByMonth(prevYear, prevMonth),
+  ]);
+
+  const prevIncomeTotal = prevIncome.reduce((s, i) => s + i.amount, 0);
+  const prevExpenseEntries = prevExpenses.filter((e) => !isSavingsCategory(e.categoryId));
+  const prevSavings = prevExpenses
+    .filter((e) => isSavingsCategory(e.categoryId))
+    .reduce((s, e) => s + e.amount, 0);
+  const prevTotal = prevExpenseEntries.reduce((s, e) => s + e.amount, 0);
+
+  return prevIncomeTotal - prevTotal - prevSavings;
+}
+
 export function usePreviousMonthNet(year: number, month: number) {
-  const [net, setNet] = useState<number | null>(null);
+  const [computedNet, setComputedNet] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const prevMonth = month === 1 ? 12 : month - 1;
@@ -14,30 +34,20 @@ export function usePreviousMonthNet(year: number, month: number) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [prevIncome, prevExpenses] = await Promise.all([
-        getIncomeByMonth(prevYear, prevMonth),
-        getExpensesByMonth(prevYear, prevMonth),
-      ]);
-
-      const prevIncomeTotal = prevIncome.reduce((s, i) => s + i.amount, 0);
-      const prevExpenseEntries = prevExpenses.filter((e) => !isSavingsCategory(e.categoryId));
-      const prevSavings = prevExpenses
-        .filter((e) => isSavingsCategory(e.categoryId))
-        .reduce((s, e) => s + e.amount, 0);
-      const prevTotal = prevExpenseEntries.reduce((s, e) => s + e.amount, 0);
-
-      const prevNet = prevIncomeTotal - prevTotal - prevSavings;
-      setNet(prevNet > 0 ? prevNet : null);
+      const prevNet = await fetchPreviousMonthClosingBalance(year, month);
+      setComputedNet(prevNet);
     } catch {
-      setNet(null);
+      setComputedNet(null);
     } finally {
       setLoading(false);
     }
-  }, [prevYear, prevMonth]);
+  }, [year, month]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  return { net, loading, prevMonthLabel };
+  const net = computedNet !== null && computedNet > 0 ? computedNet : null;
+
+  return { net, computedNet, loading, prevMonthLabel, refresh: load };
 }

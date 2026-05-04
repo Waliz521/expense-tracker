@@ -1,19 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
+import { INCOME_SOURCES } from '../lib/incomeSources';
 import { DatePickerInput } from './DatePickerInput';
 import type { IncomeEntry } from '../lib/db';
-
-const INCOME_SOURCES = [
-  'Salary',
-  'Office',
-  'Freelance',
-  'Business',
-  'Investment',
-  'Rental',
-  'Gift',
-  'Bonus',
-  'Other',
-];
 
 interface EditIncomeModalProps {
   income: IncomeEntry;
@@ -34,6 +23,12 @@ export function EditIncomeModal({ income, onSave, onClose }: EditIncomeModalProp
     setSource(income.source);
     setNote(income.note);
   }, [income]);
+
+  const sourceChoices = useMemo(() => {
+    const unique = new Set<string>([...INCOME_SOURCES]);
+    if (income.source) unique.add(income.source);
+    return Array.from(unique);
+  }, [income.source]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -86,7 +81,7 @@ export function EditIncomeModal({ income, onSave, onClose }: EditIncomeModalProp
           <div className="mt-4">
             <label className="mb-2 block text-sm font-medium text-surface-800 dark:text-surface-200">Source</label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {INCOME_SOURCES.map((src) => (
+              {sourceChoices.map((src) => (
                 <button
                   key={src}
                   type="button"

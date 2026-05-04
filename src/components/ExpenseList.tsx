@@ -1,20 +1,90 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Trash2, Pencil } from 'lucide-react';
+import { Trash2, Pencil, ChevronUp, ChevronDown } from 'lucide-react';
 import { getCategoryById } from '../lib/categories';
 import { CategoryIcon } from './icons';
 import { EditExpenseModal } from './EditExpenseModal';
 import type { ExpenseEntry } from '../lib/db';
+import type { ExpenseFilters } from './ExpenseFilters';
 
 interface ExpenseListProps {
   expenses: ExpenseEntry[];
   onEdit: (id: string, updates: { date: string; amount: number; categoryId: import('../lib/categories').CategoryId; note: string }) => Promise<void>;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void | Promise<void>;
   formatCurrency: (n: number) => string;
+  sortBy: ExpenseFilters['sortBy'];
+  sortOrder: ExpenseFilters['sortOrder'];
+  onSortChange: (column: ExpenseFilters['sortBy']) => void;
 }
 
-export function ExpenseList({ expenses, onEdit, onDelete, formatCurrency }: ExpenseListProps) {
+function SortHeader({
+  label,
+  column,
+  active,
+  order,
+  onSort,
+  align,
+}: {
+  label: string;
+  column: ExpenseFilters['sortBy'];
+  active: boolean;
+  order: 'asc' | 'desc';
+  onSort: (column: ExpenseFilters['sortBy']) => void;
+  align?: 'right';
+}) {
+  return (
+    <th
+      scope="col"
+      className={`px-4 py-3 font-semibold text-surface-700 dark:text-surface-300 ${align === 'right' ? 'text-right' : 'text-left'}`}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={`inline-flex items-center gap-1 rounded-lg px-1 py-0.5 transition hover:bg-surface-100 dark:hover:bg-surface-700/80 ${align === 'right' ? 'ml-auto' : ''}`}
+        aria-sort={active ? (order === 'asc' ? 'ascending' : 'descending') : 'none'}
+      >
+        <span>{label}</span>
+        {active ? (
+          order === 'asc' ? (
+            <ChevronUp className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+          ) : (
+            <ChevronDown className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+          )
+        ) : (
+          <span className="inline-flex flex-col opacity-40" aria-hidden>
+            <ChevronUp className="-mb-1.5 h-3 w-3" />
+            <ChevronDown className="h-3 w-3" />
+          </span>
+        )}
+      </button>
+    </th>
+  );
+}
+
+export function ExpenseList({
+  expenses,
+  onEdit,
+  onDelete,
+  formatCurrency,
+  sortBy,
+  sortOrder,
+  onSortChange,
+}: ExpenseListProps) {
   const [editing, setEditing] = useState<ExpenseEntry | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ExpenseEntry | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await Promise.resolve(onDelete(pendingDelete.id));
+      setPendingDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (expenses.length === 0) {
     return (
       <div className="rounded-2xl border border-surface-200 bg-white p-8 text-center dark:border-surface-800 dark:bg-surface-900">
@@ -31,10 +101,35 @@ export function ExpenseList({ expenses, onEdit, onDelete, formatCurrency }: Expe
         <table className="w-full min-w-[400px] text-left text-sm">
           <thead>
             <tr className="border-b border-surface-200 bg-surface-50 dark:border-surface-800 dark:bg-surface-800">
-              <th className="px-4 py-3 font-semibold text-surface-700 dark:text-surface-300">Date</th>
-              <th className="px-4 py-3 font-semibold text-surface-700 dark:text-surface-300">Category</th>
-              <th className="px-4 py-3 font-semibold text-surface-700 dark:text-surface-300">Note</th>
-              <th className="px-4 py-3 text-right font-semibold text-surface-700 dark:text-surface-300">Amount</th>
+              <SortHeader
+                label="Date"
+                column="date"
+                active={sortBy === 'date'}
+                order={sortOrder}
+                onSort={onSortChange}
+              />
+              <SortHeader
+                label="Category"
+                column="category"
+                active={sortBy === 'category'}
+                order={sortOrder}
+                onSort={onSortChange}
+              />
+              <SortHeader
+                label="Note"
+                column="note"
+                active={sortBy === 'note'}
+                order={sortOrder}
+                onSort={onSortChange}
+              />
+              <SortHeader
+                label="Amount"
+                column="amount"
+                active={sortBy === 'amount'}
+                order={sortOrder}
+                onSort={onSortChange}
+                align="right"
+              />
               <th className="w-24 px-4 py-3 text-right font-semibold text-surface-700 dark:text-surface-300">Actions</th>
             </tr>
           </thead>
@@ -73,7 +168,7 @@ export function ExpenseList({ expenses, onEdit, onDelete, formatCurrency }: Expe
                       </button>
                       <button
                         type="button"
-                        onClick={() => onDelete(e.id)}
+                        onClick={() => setPendingDelete(e)}
                         className="rounded-lg p-2 text-surface-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                         aria-label="Delete"
                       >
@@ -88,11 +183,69 @@ export function ExpenseList({ expenses, onEdit, onDelete, formatCurrency }: Expe
         </table>
       </div>
       {editing && (
-        <EditExpenseModal
-          expense={editing}
-          onSave={onEdit}
-          onClose={() => setEditing(null)}
-        />
+        <EditExpenseModal expense={editing} onSave={onEdit} onClose={() => setEditing(null)} />
+      )}
+      {pendingDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => !deleting && setPendingDelete(null)} aria-hidden />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-expense-title"
+            className="relative w-full max-w-md animate-slide-up rounded-2xl border border-surface-200 bg-white shadow-2xl dark:border-surface-800 dark:bg-surface-900"
+          >
+            <div className="border-b border-surface-200 px-5 py-4 dark:border-surface-800">
+              <h3 id="delete-expense-title" className="font-display text-lg font-bold text-surface-900 dark:text-white">
+                Delete this expense?
+              </h3>
+              <p className="mt-2 text-sm text-surface-600 dark:text-surface-400">
+                This cannot be undone. Only proceed if you&apos;re sure you want to remove this entry.
+              </p>
+            </div>
+            <div className="space-y-2 border-b border-surface-100 px-5 py-4 dark:border-surface-800">
+              <div className="flex justify-between text-sm">
+                <span className="text-surface-500 dark:text-surface-400">Date</span>
+                <span className="font-medium text-surface-900 dark:text-white">
+                  {format(new Date(pendingDelete.date), 'MMM d, yyyy')}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-surface-500 dark:text-surface-400">Category</span>
+                <span className="font-medium text-surface-900 dark:text-white">{getCategoryById(pendingDelete.categoryId).label}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-surface-500 dark:text-surface-400">Amount</span>
+                <span className="font-semibold text-surface-900 dark:text-white">{formatCurrency(pendingDelete.amount)}</span>
+              </div>
+              {pendingDelete.note ? (
+                <div className="text-sm">
+                  <span className="text-surface-500 dark:text-surface-400">Note</span>
+                  <p className="mt-1 rounded-lg bg-surface-50 px-3 py-2 text-surface-800 dark:bg-surface-800 dark:text-surface-200">
+                    {pendingDelete.note}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-3 px-5 py-4">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => void confirmDelete()}
+                className="rounded-xl bg-red-600 px-5 py-2.5 font-semibold text-white shadow-lg shadow-red-600/25 transition hover:bg-red-700 disabled:opacity-50 dark:bg-red-600 dark:hover:bg-red-500"
+              >
+                {deleting ? 'Deleting…' : 'Yes, delete expense'}
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setPendingDelete(null)}
+                className="rounded-xl border border-surface-200 bg-white px-5 py-2.5 font-medium text-surface-700 hover:bg-surface-50 dark:border-surface-800 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

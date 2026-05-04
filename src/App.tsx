@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useExpenses, useMonthRange } from './hooks/useExpenses';
 import { useIncome } from './hooks/useIncome';
-import { usePreviousMonthNet } from './hooks/usePreviousMonthNet';
+import { fetchPreviousMonthClosingBalance, usePreviousMonthNet } from './hooks/usePreviousMonthNet';
 import { useIncomeSummary } from './hooks/useIncomeSummary';
 import { useMonthSummary } from './hooks/useMonthSummary';
 import { useAuthOptional } from './context/AuthContext';
@@ -20,7 +20,7 @@ import { CarryOverBanner } from './components/CarryOverBanner';
 import { ReportModal } from './components/ReportModal';
 import { isSavingsCategory, getCategoryById } from './lib/categories';
 import { getCarriedOverSourceLabel, isCarriedOverIncome } from './lib/carryOver';
-import { FileText } from 'lucide-react';
+import { FileText, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
 function formatCurrency(amount: number): string {
@@ -33,10 +33,17 @@ export default function App() {
   const auth = useAuthOptional();
   const { year, month, setMonth } = useMonthRange();
   const { expenses, loading, addExpense, updateExpense, deleteExpense, refresh } = useExpenses(year, month);
-  const { income, loading: incomeLoading, addIncome, updateIncome, deleteIncome } = useIncome(year, month);
+  const { income, loading: incomeLoading, addIncome, updateIncome, deleteIncome, refresh: refreshIncome } = useIncome(year, month);
   const { total, savings, byCategory, daily } = useMonthSummary(expenses);
   const { total: incomeTotal } = useIncomeSummary(income);
-  const { net: prevMonthNet, loading: prevMonthLoading, prevMonthLabel } = usePreviousMonthNet(year, month);
+  const {
+    net: prevMonthNet,
+    loading: prevMonthLoading,
+    prevMonthLabel,
+    refresh: refreshPrevMonthNet,
+  } = usePreviousMonthNet(year, month);
+
+  const [carryBusy, setCarryBusy] = useState(false);
 
   const carriedOverAmount = useMemo(
     () => income.filter((i) => isCarriedOverIncome(i.source)).reduce((s, i) => s + i.amount, 0),
@@ -116,6 +123,9 @@ export default function App() {
           const catB = getCategoryById(b.categoryId).label;
           comparison = catA.localeCompare(catB);
           break;
+        case 'note':
+          comparison = (a.note || '').toLowerCase().localeCompare((b.note || '').toLowerCase());
+          break;
       }
 
       return filters.sortOrder === 'asc' ? comparison : -comparison;
@@ -134,13 +144,61 @@ export default function App() {
 
   const handleCarryOver = useCallback(async () => {
     if (prevMonthNet == null || prevMonthNet <= 0) return;
-    await addIncome({
-      date: firstDayOfMonth,
-      amount: prevMonthNet,
-      source: getCarriedOverSourceLabel(prevMonthLabel),
-      note: `Carried over from ${prevMonthLabel}`,
+    setCarryBusy(true);
+    try {
+      await addIncome({
+        date: firstDayOfMonth,
+        amount: prevMonthNet,
+        source: getCarriedOverSourceLabel(prevMonthLabel),
+        note: `Carried over from ${prevMonthLabel}`,
+      });
+      await refreshPrevMonthNet();
+    } finally {
+      setCarryBusy(false);
+    }
+  }, [addIncome, prevMonthNet, prevMonthLabel, firstDayOfMonth, refreshPrevMonthNet]);
+
+  const handleRecalculateCarryOver = useCallback(async () => {
+    if (!alreadyCarriedOverFromPrev) return;
+    const balance = await fetchPreviousMonthClosingBalance(year, month);
+    const label = getCarriedOverSourceLabel(prevMonthLabel);
+    const entry = income.find((i) => i.source === label);
+    const target = Math.max(0, balance);
+    if (entry) {
+      if (target <= 0) {
+        await deleteIncome(entry.id);
+      } else if (Math.round(entry.amount * 100) !== Math.round(target * 100)) {
+        await updateIncome(entry.id, { amount: target });
+      }
+    }
+    await refreshIncome();
+    await refreshPrevMonthNet();
+  }, [
+    alreadyCarriedOverFromPrev,
+    year,
+    month,
+    refreshPrevMonthNet,
+    prevMonthLabel,
+    income,
+    deleteIncome,
+    updateIncome,
+    refreshIncome,
+  ]);
+
+  const handleExpenseSort = useCallback((column: ExpenseFiltersType['sortBy']) => {
+    setFilters((f) => {
+      if (f.sortBy === column) {
+        return { ...f, sortOrder: f.sortOrder === 'asc' ? 'desc' : 'asc' };
+      }
+      const defaultOrder: Record<ExpenseFiltersType['sortBy'], 'asc' | 'desc'> = {
+        date: 'desc',
+        amount: 'desc',
+        category: 'asc',
+        note: 'asc',
+      };
+      return { ...f, sortBy: column, sortOrder: defaultOrder[column] };
     });
-  }, [addIncome, prevMonthNet, prevMonthLabel, firstDayOfMonth]);
+  }, []);
 
   // When editing an expense and changing its date: switch month view if date moved to another month,
   // and switch to "This Month" filter so the updated expense stays visible
@@ -183,14 +241,26 @@ export default function App() {
         <section className="animate-fade-in">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
             <h2 className="font-display text-lg font-bold text-surface-900 dark:text-white">Dashboard</h2>
-            <button
-              type="button"
-              onClick={() => setReportOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm font-medium text-surface-700 transition hover:bg-surface-50 dark:border-surface-800 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
-            >
-              <FileText className="h-4 w-4" />
-              Generate Report
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              {alreadyCarriedOverFromPrev ? (
+                <button
+                  type="button"
+                  onClick={() => void handleRecalculateCarryOver()}
+                  className="flex items-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm font-medium text-surface-700 transition hover:bg-surface-50 dark:border-surface-800 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+                >
+                  <RefreshCw className="h-4 w-4 shrink-0" />
+                  Recalculate carry-over
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setReportOpen(true)}
+                className="flex items-center gap-2 rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm font-medium text-surface-700 transition hover:bg-surface-50 dark:border-surface-800 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+              >
+                <FileText className="h-4 w-4" />
+                Generate Report
+              </button>
+            </div>
           </div>
           {!prevMonthLoading && (
             <CarryOverBanner
@@ -199,6 +269,7 @@ export default function App() {
               onCarryOver={handleCarryOver}
               alreadyCarriedOver={alreadyCarriedOverFromPrev}
               formatCurrency={formatCurrency}
+              busy={carryBusy}
             />
           )}
           <DashboardSummary
@@ -263,7 +334,15 @@ export default function App() {
                   formatCurrency={formatCurrency}
                   availableMonths={availableMonths}
                 />
-                <ExpenseList expenses={filteredExpenses} onEdit={handleUpdateExpense} onDelete={deleteExpense} formatCurrency={formatCurrency} />
+                <ExpenseList
+                  expenses={filteredExpenses}
+                  onEdit={handleUpdateExpense}
+                  onDelete={deleteExpense}
+                  formatCurrency={formatCurrency}
+                  sortBy={filters.sortBy}
+                  sortOrder={filters.sortOrder}
+                  onSortChange={handleExpenseSort}
+                />
               </>
             )}
           </div>

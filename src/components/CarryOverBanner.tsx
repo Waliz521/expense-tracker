@@ -1,19 +1,24 @@
 import { ArrowRightCircle } from 'lucide-react';
 
 interface CarryOverBannerProps {
+  /** Positive amount available to carry from previous month (first-time flow only). */
   amount: number;
   fromMonth: string;
   onCarryOver: () => Promise<void>;
+  /** When true, first-time banner is hidden — carry-over already recorded for this month. */
   alreadyCarriedOver: boolean;
   formatCurrency: (n: number) => string;
+  busy?: boolean;
 }
 
+/** Explains carry-over only before the user adds it for the first time this month. */
 export function CarryOverBanner({
   amount,
   fromMonth,
   onCarryOver,
   alreadyCarriedOver,
   formatCurrency,
+  busy,
 }: CarryOverBannerProps) {
   if (alreadyCarriedOver || amount <= 0) return null;
 
@@ -35,8 +40,9 @@ export function CarryOverBanner({
         </div>
         <button
           type="button"
-          onClick={onCarryOver}
-          className="rounded-xl bg-amber-600 px-4 py-2.5 font-semibold text-white transition hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600"
+          disabled={busy}
+          onClick={() => void onCarryOver()}
+          className="rounded-xl bg-amber-600 px-4 py-2.5 font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50 dark:bg-amber-500 dark:hover:bg-amber-600"
         >
           Carry over
         </button>
