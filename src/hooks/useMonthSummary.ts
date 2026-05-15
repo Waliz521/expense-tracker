@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { ExpenseEntry } from '../lib/db';
 import type { CategorySummary, DailyTotal } from '../types/expense';
-import { CATEGORY_IDS, isSavingsCategory, type CategoryId } from '../lib/categories';
+import { CATEGORY_IDS, isSavingsCategory, isExcludedFromDailySpendingChart, type CategoryId } from '../lib/categories';
 
 export function useMonthSummary(expenses: ExpenseEntry[]) {
   return useMemo(() => {
@@ -39,9 +39,10 @@ export function useMonthSummary(expenses: ExpenseEntry[]) {
       .filter((c) => c.total > 0)
       .sort((a, b) => b.total - a.total);
 
-    // Calculate daily totals (excluding savings)
+    // Daily bar chart: exclude tax, debt repayment, donations (still in totals & category breakdown)
     const dailyMap = new Map<string, { total: number; count: number }>();
     for (const e of expenseEntries) {
+      if (isExcludedFromDailySpendingChart(e.categoryId)) continue;
       const cur = dailyMap.get(e.date) ?? { total: 0, count: 0 };
       cur.total += e.amount;
       cur.count += 1;

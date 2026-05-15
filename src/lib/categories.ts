@@ -25,7 +25,10 @@ export const EXPENSE_CATEGORIES = [
   { id: 'insurance', label: 'Insurance', icon: 'Shield', group: 'Health' },
   // Other
   { id: 'travel', label: 'Travel', icon: 'Plane', group: 'Other' },
-  { id: 'gifts_donations', label: 'Gifts & Donations', icon: 'Gift', group: 'Other' },
+  { id: 'tax', label: 'Tax', icon: 'Receipt', group: 'Other' },
+  { id: 'debt', label: 'Debt repayment', icon: 'Banknote', group: 'Other' },
+  { id: 'donations', label: 'Donations', icon: 'HeartHandshake', group: 'Other' },
+  { id: 'gifts_donations', label: 'Gifts', icon: 'Gift', group: 'Other' },
   { id: 'investments', label: 'Investments & Savings', icon: 'TrendingUp', group: 'Other' },
   { id: 'other', label: 'Other', icon: 'MoreHorizontal', group: 'Other' },
 ] as const;
@@ -53,4 +56,9 @@ export function getCategoriesByGroup(): Record<string, Array<(typeof EXPENSE_CAT
  */
 export function isSavingsCategory(categoryId: string): boolean {
   return categoryId === 'investments';
+}
+
+/** Categories still counted in totals & breakdown, but omitted from the daily spending bar chart. */
+export function isExcludedFromDailySpendingChart(categoryId: string): boolean {
+  return categoryId === 'tax' || categoryId === 'debt' || categoryId === 'donations';
 }
