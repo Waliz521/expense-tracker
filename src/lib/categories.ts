@@ -60,5 +60,11 @@ export function isSavingsCategory(categoryId: string): boolean {
 
 /** Categories still counted in totals & breakdown, but omitted from the daily spending bar chart. */
 export function isExcludedFromDailySpendingChart(categoryId: string): boolean {
-  return categoryId === 'tax' || categoryId === 'debt' || categoryId === 'donations';
+  return (
+    categoryId === 'tax' ||
+    categoryId === 'debt' ||
+    categoryId === 'donations' ||
+    categoryId === 'gifts_donations' ||
+    categoryId === 'housing'
+  );
 }

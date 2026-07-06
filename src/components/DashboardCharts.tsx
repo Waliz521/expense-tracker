@@ -322,7 +322,7 @@ export function DashboardCharts({ byCategory, daily, total: _total, formatCurren
       <div className="min-w-0 rounded-2xl border border-surface-200 bg-white p-4 shadow-sm dark:border-surface-800 dark:bg-surface-900 sm:p-5">
         <h3 className="mb-1 font-display text-base font-bold text-surface-900 dark:text-white">Daily spending</h3>
         <p className="mb-4 text-xs text-surface-500 dark:text-surface-400">
-          Bars exclude tax, debt repayment, and donations; those still appear in the breakdown above.
+          Bars exclude rent, gifts, tax, debt repayment, and donations; those still appear in the breakdown above.
         </p>
         {barData.length === 0 ? (
           <div className="flex h-[400px] items-center justify-center text-surface-500">No data this month</div>

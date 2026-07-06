@@ -39,7 +39,7 @@ export function useMonthSummary(expenses: ExpenseEntry[]) {
       .filter((c) => c.total > 0)
       .sort((a, b) => b.total - a.total);
 
-    // Daily bar chart: exclude tax, debt repayment, donations (still in totals & category breakdown)
+    // Daily bar chart: exclude large/outlier categories (still in totals & category breakdown)
     const dailyMap = new Map<string, { total: number; count: number }>();
     for (const e of expenseEntries) {
       if (isExcludedFromDailySpendingChart(e.categoryId)) continue;
