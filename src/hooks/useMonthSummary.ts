@@ -1,24 +1,28 @@
 import { useMemo } from 'react';
 import type { ExpenseEntry } from '../lib/db';
 import type { CategorySummary, DailyTotal } from '../types/expense';
-import { CATEGORY_IDS, isSavingsCategory, isExcludedFromDailySpendingChart, type CategoryId } from '../lib/categories';
+import {
+  CATEGORY_IDS,
+  isInvestmentCategory,
+  isSavingsCategory,
+  isWealthCategory,
+  isExcludedFromDailySpendingChart,
+  type CategoryId,
+} from '../lib/categories';
 
 export function useMonthSummary(expenses: ExpenseEntry[]) {
   return useMemo(() => {
-    // Separate expenses from savings
-    const expenseEntries = expenses.filter((e) => !isSavingsCategory(e.categoryId));
+    const expenseEntries = expenses.filter((e) => !isWealthCategory(e.categoryId));
     const savingsEntries = expenses.filter((e) => isSavingsCategory(e.categoryId));
+    const investmentEntries = expenses.filter((e) => isInvestmentCategory(e.categoryId));
 
-    // Calculate total expenses (excluding savings)
     const total = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
-    
-    // Calculate total savings
     const savings = savingsEntries.reduce((sum, e) => sum + e.amount, 0);
+    const investments = investmentEntries.reduce((sum, e) => sum + e.amount, 0);
 
-    // Calculate by category (excluding savings)
     const byCategoryMap = new Map<string, { total: number; count: number }>();
     for (const id of CATEGORY_IDS) {
-      if (!isSavingsCategory(id)) {
+      if (!isWealthCategory(id)) {
         byCategoryMap.set(id, { total: 0, count: 0 });
       }
     }
@@ -39,7 +43,6 @@ export function useMonthSummary(expenses: ExpenseEntry[]) {
       .filter((c) => c.total > 0)
       .sort((a, b) => b.total - a.total);
 
-    // Daily bar chart: exclude large/outlier categories (still in totals & category breakdown)
     const dailyMap = new Map<string, { total: number; count: number }>();
     for (const e of expenseEntries) {
       if (isExcludedFromDailySpendingChart(e.categoryId)) continue;
@@ -52,6 +55,6 @@ export function useMonthSummary(expenses: ExpenseEntry[]) {
       .map(([date, { total, count }]) => ({ date, total, count }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    return { total, savings, byCategory, daily };
+    return { total, savings, investments, byCategory, daily };
   }, [expenses]);
 }

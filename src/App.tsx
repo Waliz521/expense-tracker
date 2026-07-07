@@ -18,7 +18,7 @@ import { MigrateLocalBanner } from './components/MigrateLocalBanner';
 import { ExpenseFilters, type ExpenseFilters as ExpenseFiltersType } from './components/ExpenseFilters';
 import { CarryOverBanner } from './components/CarryOverBanner';
 import { ReportModal } from './components/ReportModal';
-import { isSavingsCategory, getCategoryById } from './lib/categories';
+import { isWealthCategory, getCategoryById } from './lib/categories';
 import { getCarriedOverSourceLabel, isCarriedOverIncome } from './lib/carryOver';
 import { FileText, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
@@ -34,7 +34,7 @@ export default function App() {
   const { year, month, setMonth } = useMonthRange();
   const { expenses, loading, addExpense, updateExpense, deleteExpense, refresh } = useExpenses(year, month);
   const { income, loading: incomeLoading, addIncome, updateIncome, deleteIncome, refresh: refreshIncome } = useIncome(year, month);
-  const { total, savings, byCategory, daily } = useMonthSummary(expenses);
+  const { total, savings, investments, byCategory, daily } = useMonthSummary(expenses);
   const { total: incomeTotal } = useIncomeSummary(income);
   const {
     net: prevMonthNet,
@@ -81,7 +81,7 @@ export default function App() {
 
     // Filter by savings inclusion
     if (!filters.includeSavings) {
-      filtered = filtered.filter((e) => !isSavingsCategory(e.categoryId));
+      filtered = filtered.filter((e) => !isWealthCategory(e.categoryId));
     }
 
     // Filter by date scope (today = current date only, month = whole month)
@@ -273,8 +273,10 @@ export default function App() {
             />
           )}
           <DashboardSummary
+            year={year}
             total={total}
             savings={savings}
+            investments={investments}
             income={incomeTotal}
             carriedOver={carriedOverAmount}
             formatCurrency={formatCurrency}

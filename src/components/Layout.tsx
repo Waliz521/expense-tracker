@@ -39,7 +39,7 @@ export function Layout({ children, year, month, onMonthChange }: LayoutProps) {
   return (
     <div className="min-h-screen bg-surface-100 dark:bg-surface-900 font-sans text-surface-900 dark:text-surface-100">
       <header className="sticky top-0 z-10 border-b border-surface-200 bg-white/90 backdrop-blur dark:border-surface-800 dark:bg-surface-900/90">
-        <div className="mx-auto max-w-6xl px-4 py-4">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
           {/* Top row: logo + title + menu (mobile) or controls (desktop) */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -96,7 +96,7 @@ export function Layout({ children, year, month, onMonthChange }: LayoutProps) {
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         <FirstLoginDataNotice />
         {children}
       </main>

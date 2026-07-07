@@ -12,6 +12,7 @@ import {
   Home,
   MoreHorizontal,
   ParkingCircle,
+  PiggyBank,
   Plane,
   Receipt,
   Shield,
@@ -49,6 +50,7 @@ const iconMap: Record<string, LucideIcon> = {
   HeartHandshake,
   Gift,
   TrendingUp,
+  PiggyBank,
   MoreHorizontal,
 };
 

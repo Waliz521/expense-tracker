@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getExpensesByMonth, getIncomeByMonth } from '../lib/db';
-import { isSavingsCategory } from '../lib/categories';
+import { isWealthCategory } from '../lib/categories';
 import { format } from 'date-fns';
 
 /** Previous calendar month relative to the dashboard month being viewed. */
@@ -14,13 +14,13 @@ export async function fetchPreviousMonthClosingBalance(viewYear: number, viewMon
   ]);
 
   const prevIncomeTotal = prevIncome.reduce((s, i) => s + i.amount, 0);
-  const prevExpenseEntries = prevExpenses.filter((e) => !isSavingsCategory(e.categoryId));
-  const prevSavings = prevExpenses
-    .filter((e) => isSavingsCategory(e.categoryId))
+  const prevExpenseEntries = prevExpenses.filter((e) => !isWealthCategory(e.categoryId));
+  const prevWealth = prevExpenses
+    .filter((e) => isWealthCategory(e.categoryId))
     .reduce((s, e) => s + e.amount, 0);
   const prevTotal = prevExpenseEntries.reduce((s, e) => s + e.amount, 0);
 
-  return prevIncomeTotal - prevTotal - prevSavings;
+  return prevIncomeTotal - prevTotal - prevWealth;
 }
 
 export function usePreviousMonthNet(year: number, month: number) {

@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { ExpenseEntry, IncomeEntry } from './db';
 import { getCategoryById } from './categories';
-import { isSavingsCategory } from './categories';
+import { isInvestmentCategory, isSavingsCategory, isWealthCategory } from './categories';
 import { format, parseISO } from 'date-fns';
 
 function formatCurrency(amount: number): string {
@@ -23,13 +23,15 @@ export async function generateReportPdf(
 ): Promise<void> {
   const doc = new jsPDF();
 
-  const expenseEntries = expenses.filter((e) => !isSavingsCategory(e.categoryId));
+  const expenseEntries = expenses.filter((e) => !isWealthCategory(e.categoryId));
   const savingsEntries = expenses.filter((e) => isSavingsCategory(e.categoryId));
+  const investmentEntries = expenses.filter((e) => isInvestmentCategory(e.categoryId));
 
   const incomeTotal = income.reduce((s, i) => s + i.amount, 0);
   const expenseTotal = expenseEntries.reduce((s, e) => s + e.amount, 0);
   const savingsTotal = savingsEntries.reduce((s, e) => s + e.amount, 0);
-  const net = incomeTotal - expenseTotal - savingsTotal;
+  const investmentsTotal = investmentEntries.reduce((s, e) => s + e.amount, 0);
+  const net = incomeTotal - expenseTotal - savingsTotal - investmentsTotal;
 
   const fromLabel = format(parseISO(from), 'MMM d, yyyy');
   const toLabel = format(parseISO(to), 'MMM d, yyyy');
@@ -55,6 +57,7 @@ export async function generateReportPdf(
       ['Income', formatCurr(incomeTotal)],
       ['Total Expenses', formatCurr(expenseTotal)],
       ...(savingsTotal > 0 ? [['Savings', formatCurr(savingsTotal)]] : []),
+      ...(investmentsTotal > 0 ? [['Investments', formatCurr(investmentsTotal)]] : []),
       ['Net', formatCurr(net)],
     ],
     theme: 'plain',

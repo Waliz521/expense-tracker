@@ -29,7 +29,8 @@ export const EXPENSE_CATEGORIES = [
   { id: 'debt', label: 'Debt repayment', icon: 'Banknote', group: 'Other' },
   { id: 'donations', label: 'Donations', icon: 'HeartHandshake', group: 'Other' },
   { id: 'gifts_donations', label: 'Gifts', icon: 'Gift', group: 'Other' },
-  { id: 'investments', label: 'Investments & Savings', icon: 'TrendingUp', group: 'Other' },
+  { id: 'investments', label: 'Investments', icon: 'TrendingUp', group: 'Other' },
+  { id: 'savings', label: 'Savings', icon: 'PiggyBank', group: 'Other' },
   { id: 'other', label: 'Other', icon: 'MoreHorizontal', group: 'Other' },
 ] as const;
 
@@ -51,11 +52,17 @@ export function getCategoriesByGroup(): Record<string, Array<(typeof EXPENSE_CAT
   return map;
 }
 
-/**
- * Check if a category is savings/investments (should be excluded from expense calculations)
- */
 export function isSavingsCategory(categoryId: string): boolean {
+  return categoryId === 'savings';
+}
+
+export function isInvestmentCategory(categoryId: string): boolean {
   return categoryId === 'investments';
+}
+
+/** Savings or investments — excluded from regular expense totals and net. */
+export function isWealthCategory(categoryId: string): boolean {
+  return isSavingsCategory(categoryId) || isInvestmentCategory(categoryId);
 }
 
 /** Categories still counted in totals & breakdown, but omitted from the daily spending bar chart. */

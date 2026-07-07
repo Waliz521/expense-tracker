@@ -20,7 +20,8 @@ export interface MonthSummary {
   year: number;
   month: number;
   total: number; // Total expenses (excluding savings)
-  savings: number; // Total savings/investments
+  savings: number;
+  investments: number;
   byCategory: CategorySummary[]; // Categories excluding savings
   daily: DailyTotal[]; // Daily totals for chart: excludes savings and tax/debt/donations bars
 }
