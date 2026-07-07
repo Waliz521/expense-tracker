@@ -154,6 +154,7 @@ export function DashboardSummary({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Total expenses</p>
                 <p className={`${amountClass} text-surface-900 dark:text-white`}>{formatCurrency(total)}</p>
+                <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-400">excl. gifts &amp; donations</p>
               </div>
             </div>
           </div>

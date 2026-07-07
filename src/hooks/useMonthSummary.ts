@@ -7,6 +7,7 @@ import {
   isSavingsCategory,
   isWealthCategory,
   isExcludedFromDailySpendingChart,
+  isExcludedFromDashboardExpenseTotal,
   type CategoryId,
 } from '../lib/categories';
 
@@ -16,7 +17,10 @@ export function useMonthSummary(expenses: ExpenseEntry[]) {
     const savingsEntries = expenses.filter((e) => isSavingsCategory(e.categoryId));
     const investmentEntries = expenses.filter((e) => isInvestmentCategory(e.categoryId));
 
-    const total = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
+    const expenseTotalAll = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
+    const total = expenseEntries
+      .filter((e) => !isExcludedFromDashboardExpenseTotal(e.categoryId))
+      .reduce((sum, e) => sum + e.amount, 0);
     const savings = savingsEntries.reduce((sum, e) => sum + e.amount, 0);
     const investments = investmentEntries.reduce((sum, e) => sum + e.amount, 0);
 
@@ -38,7 +42,7 @@ export function useMonthSummary(expenses: ExpenseEntry[]) {
         categoryId: categoryId as CategoryId,
         total: catTotal,
         count,
-        percentage: total > 0 ? (catTotal / total) * 100 : 0,
+        percentage: expenseTotalAll > 0 ? (catTotal / expenseTotalAll) * 100 : 0,
       }))
       .filter((c) => c.total > 0)
       .sort((a, b) => b.total - a.total);

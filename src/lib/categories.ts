@@ -65,6 +65,11 @@ export function isWealthCategory(categoryId: string): boolean {
   return isSavingsCategory(categoryId) || isInvestmentCategory(categoryId);
 }
 
+/** Categories omitted from the dashboard "Total expenses" card (still in breakdown & lists). */
+export function isExcludedFromDashboardExpenseTotal(categoryId: string): boolean {
+  return categoryId === 'donations' || categoryId === 'gifts_donations';
+}
+
 /** Categories still counted in totals & breakdown, but omitted from the daily spending bar chart. */
 export function isExcludedFromDailySpendingChart(categoryId: string): boolean {
   return (
