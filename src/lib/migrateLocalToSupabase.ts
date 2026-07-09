@@ -17,6 +17,8 @@ export async function migrateLocalToSupabase(): Promise<{ transferred: number; e
         amount: e.amount,
         categoryId: e.categoryId,
         note: e.note,
+        paidFromSavings: e.paidFromSavings ?? false,
+        excludeFromDailyChart: e.excludeFromDailyChart ?? false,
       });
       transferred++;
     }

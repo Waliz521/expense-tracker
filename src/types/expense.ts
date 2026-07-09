@@ -10,10 +10,17 @@ export interface CategorySummary {
   percentage: number;
 }
 
+export interface DailyCategoryTotal {
+  categoryId: CategoryId;
+  total: number;
+  percentage: number;
+}
+
 export interface DailyTotal {
   date: string;
   total: number;
   count: number;
+  byCategory: DailyCategoryTotal[];
 }
 
 export interface MonthSummary {

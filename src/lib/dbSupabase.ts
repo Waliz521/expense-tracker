@@ -11,6 +11,8 @@ function toEntry(row: {
   amount: number;
   category_id: string;
   note: string;
+  paid_from_savings?: boolean | null;
+  exclude_from_daily_chart?: boolean | null;
   created_at: string;
 }): ExpenseEntry {
   return {
@@ -19,6 +21,8 @@ function toEntry(row: {
     amount: Number(row.amount),
     categoryId: row.category_id as CategoryId,
     note: row.note ?? '',
+    paidFromSavings: row.paid_from_savings ?? false,
+    excludeFromDailyChart: row.exclude_from_daily_chart ?? false,
     createdAt: new Date(row.created_at).getTime(),
   };
 }
@@ -37,8 +41,10 @@ export async function addExpenseSupabase(
       amount: entry.amount,
       category_id: entry.categoryId,
       note: entry.note,
+      paid_from_savings: entry.paidFromSavings ?? false,
+      exclude_from_daily_chart: entry.excludeFromDailyChart ?? false,
     })
-    .select('id, date, amount, category_id, note, created_at')
+    .select('id, date, amount, category_id, note, paid_from_savings, exclude_from_daily_chart, created_at')
     .single();
 
   if (error) throw error;
@@ -54,6 +60,8 @@ export async function updateExpenseSupabase(
   if (updates.amount != null) body.amount = updates.amount;
   if (updates.categoryId != null) body.category_id = updates.categoryId;
   if (updates.note != null) body.note = updates.note;
+  if (updates.paidFromSavings != null) body.paid_from_savings = updates.paidFromSavings;
+  if (updates.excludeFromDailyChart != null) body.exclude_from_daily_chart = updates.excludeFromDailyChart;
 
   const { error } = await supabase.from(EXPENSES_TABLE).update(body).eq('id', id);
   if (error) throw error;
@@ -74,7 +82,7 @@ export async function getExpensesByMonthSupabase(
 
   const { data, error } = await supabase
     .from(EXPENSES_TABLE)
-    .select('id, date, amount, category_id, note, created_at')
+    .select('id, date, amount, category_id, note, paid_from_savings, exclude_from_daily_chart, created_at')
     .gte('date', start)
     .lte('date', end)
     .order('date', { ascending: false });
@@ -86,7 +94,7 @@ export async function getExpensesByMonthSupabase(
 export async function getExpensesByDateRangeSupabase(from: string, to: string): Promise<ExpenseEntry[]> {
   const { data, error } = await supabase
     .from(EXPENSES_TABLE)
-    .select('id, date, amount, category_id, note, created_at')
+    .select('id, date, amount, category_id, note, paid_from_savings, exclude_from_daily_chart, created_at')
     .gte('date', from)
     .lte('date', to)
     .order('date', { ascending: false });

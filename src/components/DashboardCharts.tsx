@@ -10,7 +10,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { useState, useEffect, useRef } from 'react';
 import { getCategoryById } from '../lib/categories';
-import type { CategorySummary, DailyTotal } from '../types/expense';
+import type { CategorySummary, DailyTotal, DailyCategoryTotal } from '../types/expense';
 
 const CHART_COLORS = [
   '#0d9488', /* teal */
@@ -220,6 +220,52 @@ function Treemap({ data, width, height, formatCurrency }: TreemapProps) {
   );
 }
 
+interface DailyBarPoint {
+  date: string;
+  label: string;
+  total: number;
+  count: number;
+  byCategory: DailyCategoryTotal[];
+}
+
+function DailyBarTooltip({
+  active,
+  payload,
+  formatCurrency,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: DailyBarPoint }>;
+  formatCurrency: (n: number) => string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  const point = payload[0].payload;
+
+  return (
+    <div className="max-w-xs rounded-xl border border-surface-200 bg-white px-3 py-2.5 text-sm shadow-lg dark:border-surface-700 dark:bg-surface-900">
+      <p className="font-semibold text-surface-900 dark:text-white">
+        {format(parseISO(point.date), 'MMM d, yyyy')}
+      </p>
+      <p className="mt-0.5 font-medium text-accent">
+        Spent: {formatCurrency(point.total)}
+      </p>
+      {point.byCategory.length > 0 && (
+        <ul className="mt-2 space-y-1 border-t border-surface-100 pt-2 dark:border-surface-800">
+          {point.byCategory.map((c) => (
+            <li key={c.categoryId} className="flex items-center justify-between gap-4 text-xs">
+              <span className="text-surface-600 dark:text-surface-400">{getCategoryById(c.categoryId).label}</span>
+              <span className="shrink-0 font-medium text-surface-800 dark:text-surface-200">
+                {formatCurrency(c.total)}{' '}
+                <span className="text-surface-500 dark:text-surface-500">({c.percentage.toFixed(0)}%)</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 interface DashboardChartsProps {
   byCategory: CategorySummary[];
   daily: DailyTotal[];
@@ -235,11 +281,12 @@ export function DashboardCharts({ byCategory, daily, total: _total, formatCurren
     color: CHART_COLORS[i % CHART_COLORS.length],
   }));
 
-  const barData = daily.map((d) => ({
+  const barData: DailyBarPoint[] = daily.map((d) => ({
     date: d.date,
     label: format(parseISO(d.date), 'MMM d'),
     total: d.total,
     count: d.count,
+    byCategory: d.byCategory,
   }));
 
   const treemapContainerRef = useRef<HTMLDivElement>(null);
@@ -344,11 +391,8 @@ export function DashboardCharts({ byCategory, daily, total: _total, formatCurren
                   className="text-surface-500"
                 />
                 <Tooltip
-                  formatter={(value: number) => [formatCurrency(value), 'Spent']}
-                  labelFormatter={(_, payload) =>
-                    payload?.[0]?.payload?.date && format(parseISO(payload[0].payload.date), 'MMM d, yyyy')
-                  }
-                  contentStyle={{ borderRadius: '12px', border: '1px solid var(--surface-200)' }}
+                  cursor={{ fill: 'rgba(13, 148, 136, 0.08)' }}
+                  content={<DailyBarTooltip formatCurrency={formatCurrency} />}
                 />
                 <Bar dataKey="total" fill="#0d9488" radius={[4, 4, 0, 0]} name="Spent" />
               </BarChart>

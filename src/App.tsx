@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useExpenses, useMonthRange } from './hooks/useExpenses';
 import { useIncome } from './hooks/useIncome';
 import { fetchPreviousMonthClosingBalance, usePreviousMonthNet } from './hooks/usePreviousMonthNet';
@@ -19,6 +19,8 @@ import { ExpenseFilters, type ExpenseFilters as ExpenseFiltersType } from './com
 import { CarryOverBanner } from './components/CarryOverBanner';
 import { ReportModal } from './components/ReportModal';
 import { isWealthCategory, getCategoryById } from './lib/categories';
+import { computeMonthNet } from './lib/savings';
+import { useSavingsPool } from './hooks/useYearSavings';
 import { getCarriedOverSourceLabel, isCarriedOverIncome } from './lib/carryOver';
 import { FileText, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
@@ -36,6 +38,12 @@ export default function App() {
   const { income, loading: incomeLoading, addIncome, updateIncome, deleteIncome, refresh: refreshIncome } = useIncome(year, month);
   const { total, savings, investments, byCategory, daily } = useMonthSummary(expenses);
   const { total: incomeTotal } = useIncomeSummary(income);
+  const net = useMemo(() => computeMonthNet(incomeTotal, expenses), [incomeTotal, expenses]);
+  const { pool: savingsPool, loading: savingsPoolLoading, refresh: refreshSavingsPool } = useSavingsPool(year, month);
+
+  useEffect(() => {
+    refreshSavingsPool();
+  }, [expenses, refreshSavingsPool]);
   const {
     net: prevMonthNet,
     loading: prevMonthLoading,
@@ -205,7 +213,14 @@ export default function App() {
   const handleUpdateExpense = useCallback(
     async (
       id: string,
-      updates: { date?: string; amount?: number; categoryId?: import('./lib/categories').CategoryId; note?: string }
+      updates: {
+        date?: string;
+        amount?: number;
+        categoryId?: import('./lib/categories').CategoryId;
+        note?: string;
+        paidFromSavings?: boolean;
+        excludeFromDailyChart?: boolean;
+      }
     ) => {
       await updateExpense(id, updates);
       if (updates.date) {
@@ -278,6 +293,9 @@ export default function App() {
             savings={savings}
             investments={investments}
             income={incomeTotal}
+            net={net}
+            savingsPool={savingsPool}
+            savingsPoolLoading={savingsPoolLoading}
             carriedOver={carriedOverAmount}
             formatCurrency={formatCurrency}
           />

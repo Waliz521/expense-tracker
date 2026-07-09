@@ -6,6 +6,10 @@ export interface ExpenseEntry {
   amount: number;
   categoryId: CategoryId;
   note: string;
+  /** When true, paid from savings pool — shown as expense but does not reduce net twice. */
+  paidFromSavings?: boolean;
+  /** When true, omitted from the daily spending bar chart (still in totals & breakdown). */
+  excludeFromDailyChart?: boolean;
   createdAt: number;
 }
 

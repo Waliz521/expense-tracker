@@ -1,13 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
-import { getCategoriesByGroup } from '../lib/categories';
+import { getCategoriesByGroup, isWealthCategory } from '../lib/categories';
 import { CategoryIcon } from './icons';
 import { DatePickerInput } from './DatePickerInput';
 import type { CategoryId } from '../lib/categories';
 
 interface AddExpenseProps {
   defaultDate: string;
-  onAdd: (entry: { date: string; amount: number; categoryId: CategoryId; note: string }) => Promise<unknown>;
+  onAdd: (entry: {
+    date: string;
+    amount: number;
+    categoryId: CategoryId;
+    note: string;
+    paidFromSavings?: boolean;
+    excludeFromDailyChart?: boolean;
+  }) => Promise<unknown>;
 }
 
 export function AddExpense({ defaultDate, onAdd }: AddExpenseProps) {
@@ -15,10 +22,25 @@ export function AddExpense({ defaultDate, onAdd }: AddExpenseProps) {
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState<CategoryId>('food_dining');
   const [note, setNote] = useState('');
+  const [paidFromSavings, setPaidFromSavings] = useState(false);
+  const [excludeFromDailyChart, setExcludeFromDailyChart] = useState(false);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const groups = getCategoriesByGroup();
+  const wealthCategory = isWealthCategory(categoryId);
+
+  useEffect(() => {
+    if (wealthCategory) {
+      setPaidFromSavings(false);
+      setExcludeFromDailyChart(false);
+    }
+  }, [wealthCategory]);
+
+  function handlePaidFromSavingsChange(checked: boolean) {
+    setPaidFromSavings(checked);
+    if (checked) setExcludeFromDailyChart(true);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,9 +48,18 @@ export function AddExpense({ defaultDate, onAdd }: AddExpenseProps) {
     if (Number.isNaN(num) || num <= 0) return;
     setSubmitting(true);
     try {
-      await onAdd({ date, amount: num, categoryId, note: note.trim() });
+      await onAdd({
+        date,
+        amount: num,
+        categoryId,
+        note: note.trim(),
+        paidFromSavings: wealthCategory ? false : paidFromSavings,
+        excludeFromDailyChart: wealthCategory ? false : excludeFromDailyChart,
+      });
       setAmount('');
       setNote('');
+      setPaidFromSavings(false);
+      setExcludeFromDailyChart(false);
       setOpen(false);
     } finally {
       setSubmitting(false);
@@ -100,6 +131,38 @@ export function AddExpense({ defaultDate, onAdd }: AddExpenseProps) {
               ))}
             </div>
           </div>
+          {!wealthCategory && (
+            <div className="mt-4 space-y-3">
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-surface-200 bg-surface-50 px-3 py-3 dark:border-surface-800 dark:bg-surface-800">
+                <input
+                  type="checkbox"
+                  checked={paidFromSavings}
+                  onChange={(e) => handlePaidFromSavingsChange(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-surface-300 text-accent focus:ring-accent"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-surface-800 dark:text-surface-200">Paid from savings</span>
+                  <span className="mt-0.5 block text-xs text-surface-500 dark:text-surface-400">
+                    Counts in your spending but won&apos;t reduce net again — it comes from your savings pool.
+                  </span>
+                </span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-surface-200 bg-surface-50 px-3 py-3 dark:border-surface-800 dark:bg-surface-800">
+                <input
+                  type="checkbox"
+                  checked={excludeFromDailyChart}
+                  onChange={(e) => setExcludeFromDailyChart(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-surface-300 text-accent focus:ring-accent"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-surface-800 dark:text-surface-200">Exclude from daily chart</span>
+                  <span className="mt-0.5 block text-xs text-surface-500 dark:text-surface-400">
+                    Still counts in totals and category breakdown — hidden from the daily bar chart only.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
           <div className="mt-4">
             <label className="mb-1 block text-sm font-medium text-surface-800 dark:text-surface-200">Note (optional)</label>
             <input

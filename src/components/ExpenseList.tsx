@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { Trash2, Pencil, ChevronUp, ChevronDown } from 'lucide-react';
 import { getCategoryById } from '../lib/categories';
+import { isSavingsWithdrawal } from '../lib/savings';
 import { CategoryIcon } from './icons';
 import { EditExpenseModal } from './EditExpenseModal';
 import type { ExpenseEntry } from '../lib/db';
@@ -9,7 +10,17 @@ import type { ExpenseFilters } from './ExpenseFilters';
 
 interface ExpenseListProps {
   expenses: ExpenseEntry[];
-  onEdit: (id: string, updates: { date: string; amount: number; categoryId: import('../lib/categories').CategoryId; note: string }) => Promise<void>;
+  onEdit: (
+    id: string,
+    updates: {
+      date: string;
+      amount: number;
+      categoryId: import('../lib/categories').CategoryId;
+      note: string;
+      paidFromSavings?: boolean;
+      excludeFromDailyChart?: boolean;
+    }
+  ) => Promise<void>;
   onDelete: (id: string) => void | Promise<void>;
   formatCurrency: (n: number) => string;
   sortBy: ExpenseFilters['sortBy'];
@@ -145,9 +156,19 @@ export function ExpenseList({
                     {format(new Date(e.date), 'MMM d, yyyy')}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="flex items-center gap-2">
+                    <span className="flex flex-wrap items-center gap-2">
                       <CategoryIcon name={cat.icon} className="h-4 w-4 text-accent" />
                       {cat.label}
+                      {isSavingsWithdrawal(e) && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                          From savings
+                        </span>
+                      )}
+                      {e.excludeFromDailyChart && (
+                        <span className="rounded-full bg-surface-200 px-2 py-0.5 text-xs font-medium text-surface-600 dark:bg-surface-700 dark:text-surface-300">
+                          Hidden from chart
+                        </span>
+                      )}
                     </span>
                   </td>
                   <td className="max-w-[180px] truncate px-4 py-3 text-surface-600 dark:text-surface-400" title={e.note}>

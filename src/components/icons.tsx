@@ -21,6 +21,7 @@ import {
   Sparkles,
   TrendingUp,
   UtensilsCrossed,
+  Wine,
   Wrench,
   Zap,
 } from 'lucide-react';
@@ -32,6 +33,7 @@ const iconMap: Record<string, LucideIcon> = {
   Zap,
   ShoppingCart,
   UtensilsCrossed,
+  Wine,
   Car,
   Wrench,
   Fuel,

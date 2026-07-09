@@ -25,7 +25,14 @@ export function useExpenses(year: number, month: number) {
   }, [load]);
 
   const addExpense = useCallback(
-    async (entry: { date: string; amount: number; categoryId: CategoryId; note: string }) => {
+    async (entry: {
+      date: string;
+      amount: number;
+      categoryId: CategoryId;
+      note: string;
+      paidFromSavings?: boolean;
+      excludeFromDailyChart?: boolean;
+    }) => {
       const created = await dbAdd(entry);
       const [y, m] = entry.date.split('-').map(Number);
       if (y === year && m === month) {
@@ -37,7 +44,7 @@ export function useExpenses(year: number, month: number) {
   );
 
   const updateExpense = useCallback(
-    async (id: string, updates: Partial<Pick<ExpenseEntry, 'amount' | 'categoryId' | 'note' | 'date'>>) => {
+    async (id: string, updates: Partial<Pick<ExpenseEntry, 'amount' | 'categoryId' | 'note' | 'date' | 'paidFromSavings' | 'excludeFromDailyChart'>>) => {
       await dbUpdate(id, updates);
       await load();
     },

@@ -11,6 +11,9 @@ interface DashboardSummaryProps {
   savings: number;
   investments: number;
   income: number;
+  net: number;
+  savingsPool?: number | null;
+  savingsPoolLoading?: boolean;
   carriedOver?: number;
   formatCurrency: (n: number) => string;
 }
@@ -18,7 +21,7 @@ interface DashboardSummaryProps {
 const WEALTH_META: Record<WealthKind, { title: string; subtitle: string; empty: string; color: string }> = {
   savings: {
     title: 'Savings',
-    subtitle: 'Total from Savings expenses this year',
+    subtitle: 'Net savings this year (deposits minus paid-from-savings spending)',
     empty: 'No savings recorded for {year} yet.',
     color: 'text-green-600 dark:text-green-400',
   },
@@ -115,11 +118,14 @@ export function DashboardSummary({
   savings,
   investments,
   income,
+  net,
+  savingsPool = null,
+  savingsPoolLoading = false,
   carriedOver = 0,
   formatCurrency,
 }: DashboardSummaryProps) {
   const [yearModal, setYearModal] = useState<WealthKind | null>(null);
-  const netAmount = income - total - savings - investments;
+  const netAmount = net;
 
   const cardClass =
     'min-w-0 rounded-2xl border border-surface-200 bg-white p-4 shadow-sm dark:border-surface-800 dark:bg-surface-900 sm:p-5';
@@ -154,7 +160,6 @@ export function DashboardSummary({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Total expenses</p>
                 <p className={`${amountClass} text-surface-900 dark:text-white`}>{formatCurrency(total)}</p>
-                <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-400">excl. gifts &amp; donations</p>
               </div>
             </div>
           </div>
@@ -187,6 +192,11 @@ export function DashboardSummary({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-surface-500 dark:text-surface-400">Savings</p>
                 <p className={`${amountClass} text-green-600 dark:text-green-400`}>{formatCurrency(savings)}</p>
+                {!savingsPoolLoading && savingsPool != null && (
+                  <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-400">
+                    Pool balance: {formatCurrency(savingsPool)}
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => setYearModal('savings')}

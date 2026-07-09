@@ -4,24 +4,21 @@ import type { CategorySummary, DailyTotal } from '../types/expense';
 import {
   CATEGORY_IDS,
   isInvestmentCategory,
-  isSavingsCategory,
   isWealthCategory,
-  isExcludedFromDailySpendingChart,
-  isExcludedFromDashboardExpenseTotal,
+  isExpenseExcludedFromDailyChart,
   type CategoryId,
 } from '../lib/categories';
+import { netSavingsFlow, sumSavingsDeposits, sumSavingsWithdrawals } from '../lib/savings';
 
 export function useMonthSummary(expenses: ExpenseEntry[]) {
   return useMemo(() => {
     const expenseEntries = expenses.filter((e) => !isWealthCategory(e.categoryId));
-    const savingsEntries = expenses.filter((e) => isSavingsCategory(e.categoryId));
     const investmentEntries = expenses.filter((e) => isInvestmentCategory(e.categoryId));
 
-    const expenseTotalAll = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
-    const total = expenseEntries
-      .filter((e) => !isExcludedFromDashboardExpenseTotal(e.categoryId))
-      .reduce((sum, e) => sum + e.amount, 0);
-    const savings = savingsEntries.reduce((sum, e) => sum + e.amount, 0);
+    const total = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
+    const savings = netSavingsFlow(expenses);
+    const savingsDeposits = sumSavingsDeposits(expenses);
+    const savingsWithdrawals = sumSavingsWithdrawals(expenses);
     const investments = investmentEntries.reduce((sum, e) => sum + e.amount, 0);
 
     const byCategoryMap = new Map<string, { total: number; count: number }>();
@@ -42,23 +39,35 @@ export function useMonthSummary(expenses: ExpenseEntry[]) {
         categoryId: categoryId as CategoryId,
         total: catTotal,
         count,
-        percentage: expenseTotalAll > 0 ? (catTotal / expenseTotalAll) * 100 : 0,
+        percentage: total > 0 ? (catTotal / total) * 100 : 0,
       }))
       .filter((c) => c.total > 0)
       .sort((a, b) => b.total - a.total);
 
-    const dailyMap = new Map<string, { total: number; count: number }>();
+    const dailyMap = new Map<string, { total: number; count: number; categories: Map<string, number> }>();
     for (const e of expenseEntries) {
-      if (isExcludedFromDailySpendingChart(e.categoryId)) continue;
-      const cur = dailyMap.get(e.date) ?? { total: 0, count: 0 };
+      if (isExpenseExcludedFromDailyChart(e)) continue;
+      const cur = dailyMap.get(e.date) ?? { total: 0, count: 0, categories: new Map() };
       cur.total += e.amount;
       cur.count += 1;
+      cur.categories.set(e.categoryId, (cur.categories.get(e.categoryId) ?? 0) + e.amount);
       dailyMap.set(e.date, cur);
     }
     const daily: DailyTotal[] = Array.from(dailyMap.entries())
-      .map(([date, { total, count }]) => ({ date, total, count }))
+      .map(([date, { total: dayTotal, count, categories }]) => ({
+        date,
+        total: dayTotal,
+        count,
+        byCategory: Array.from(categories.entries())
+          .map(([categoryId, catTotal]) => ({
+            categoryId: categoryId as CategoryId,
+            total: catTotal,
+            percentage: dayTotal > 0 ? (catTotal / dayTotal) * 100 : 0,
+          }))
+          .sort((a, b) => b.total - a.total),
+      }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    return { total, savings, investments, byCategory, daily };
+    return { total, savings, savingsDeposits, savingsWithdrawals, investments, byCategory, daily };
   }, [expenses]);
 }
